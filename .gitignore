@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.DS_Store
+
+# Downloaded with `hf download --local-dir` (anyone can re-download)
+playground/models/
+
+# Everything the scripts produce: adapter, merged model, trimmed model, GGUF files
+playground/out/
+*.gguf
+*.safetensors
+
+# Cloned for step 5 (see COMMANDS.md)
+llama.cpp/

@@ -1,0 +1,1348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to train your own LLM</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="deck">
+
+    <!-- 1. Title -->
+    <section class="slide slide--image">
+      <img src="assets/title.png" alt="How to train your own LLM — Ovidijus Parsiunas">
+    </section>
+
+    <!-- 2. Agenda -->
+    <section class="slide slide--content" data-intro="title">
+      <h2>Today <span class="h2__ja" lang="ja">本日の内容</span></h2>
+      <ol class="agenda">
+        <li class="fragment"><span data-morph="why">Why</span></li>
+        <li class="fragment">How LLMs work</li>
+        <li class="fragment">Run an LLM locally</li>
+        <li class="fragment">Fine-tune</li>
+        <li class="fragment">Compress</li>
+      </ol>
+      <div class="agenda__outcome fragment">
+        <svg viewBox="0 0 48 48" class="agenda__arrow" aria-hidden="true"><path d="M8 24h30M26 12l12 12-12 12"/></svg>
+        <p>Don't just use AI. Create it.</p>
+      </div>
+    </section>
+
+    <!-- 3. Why: AI is moving onto smaller hardware, and what local gets you -->
+    <section class="slide slide--content" data-intro="morph">
+      <h2 data-morph="why">Why <span class="morph__tail" data-morph="local">local?</span> <span class="h2__ja morph__tail" lang="ja">なぜローカル？</span></h2>
+
+      <!-- Local models keep getting more capable (the line draws in on click 1). -->
+      <div class="growth">
+        <svg viewBox="0 0 1200 280" class="growth__chart fragment" aria-label="Local model capability rising over time">
+          <defs>
+            <linearGradient id="growth-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1b76e0" stop-opacity="0.18"/>
+              <stop offset="1" stop-color="#1b76e0" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path class="growth__area" d="M40 250 C 640 248, 940 200, 1160 36 V 278 H 40 Z"/>
+          <path class="growth__line" d="M40 250 C 640 248, 940 200, 1160 36" pathLength="1"/>
+          <circle class="growth__dot" cx="1160" cy="36" r="12"/>
+          <text class="growth__label" x="1124" y="26" text-anchor="end">What local models can do</text>
+          <path class="growth__axis" d="M0 278 H 1196"/>
+        </svg>
+      </div>
+
+      <ul class="factors">
+        <li class="fragment">
+          <span class="factors__icon" style="--bg: var(--navy)">
+            <svg viewBox="0 0 48 48" class="icon">
+              <path d="M7 21a24 24 0 0 1 34 0M13 28a15 15 0 0 1 22 0M19 35a6.5 6.5 0 0 1 10 0"/>
+              <circle cx="24" cy="40" r="1.5"/>
+              <path d="M9 9l30 30" class="strike"/>
+            </svg>
+          </span>
+          No internet
+        </li>
+        <li class="fragment">
+          <span class="factors__icon" style="--bg: var(--blue)">
+            <svg viewBox="0 0 48 48" class="icon">
+              <circle cx="24" cy="24" r="15"/>
+              <path d="M18 16l6 8 6-8M24 24v10M19 25h10M19 30h10"/>
+              <path d="M9 9l30 30" class="strike"/>
+            </svg>
+          </span>
+          No cost
+        </li>
+        <li class="fragment">
+          <span class="factors__icon" style="--bg: var(--teal)">
+            <svg viewBox="0 0 48 48" class="icon">
+              <rect x="12" y="22" width="24" height="18" rx="3"/>
+              <path d="M17 22v-5a7 7 0 0 1 14 0v5M24 29v4"/>
+            </svg>
+          </span>
+          Privacy
+        </li>
+        <li class="fragment">
+          <span class="factors__icon" style="--bg: var(--coral)">
+            <svg viewBox="0 0 48 48" class="icon">
+              <path d="M8 14h32M8 24h32M8 34h32"/>
+              <circle cx="30" cy="14" r="4" class="knob"/>
+              <circle cx="16" cy="24" r="4" class="knob"/>
+              <circle cx="26" cy="34" r="4" class="knob"/>
+            </svg>
+          </span>
+          Full control
+        </li>
+      </ul>
+    </section>
+
+    <!-- 4. Why (caveat): when to use an LLM provider vs a local model.
+         Entered from slide 3 with a morph: "local?" glides from "Why local?" into this heading. -->
+    <section class="slide slide--content" data-intro="morph">
+      <h2><span class="morph__tail"><span data-morph="llm">LLM</span> provider or</span> <span data-morph="local">local?</span>
+        <span class="h2__ja h2__ja--below morph__tail" lang="ja">LLMプロバイダーか、ローカルか？</span></h2>
+
+      <div class="versus">
+        <div class="versus__card versus__card--big fragment">
+          <svg viewBox="0 0 64 64" class="icon">
+            <path d="M18 46h30a10 10 0 0 0 1-20 14 14 0 0 0-27-3 11 11 0 0 0-4 23z"/>
+          </svg>
+          <h3>LLM provider</h3>
+          <p class="versus__when">AI is your competitive edge</p>
+          <ul>
+            <li>High precision &amp; accuracy</li>
+            <li>Managing your assets</li>
+            <li>Coding</li>
+            <li>Research</li>
+          </ul>
+        </div>
+
+        <div class="versus__card versus__card--local fragment">
+          <svg viewBox="0 0 64 64" class="icon">
+            <rect x="16" y="16" width="32" height="32" rx="3"/>
+            <rect x="25" y="25" width="14" height="14" rx="1" class="lights"/>
+            <path d="M24 16V8M32 16V8M40 16V8M24 56v-8M32 56v-8M40 56v-8M16 24H8M16 32H8M16 40H8M56 24h-8M56 32h-8M56 40h-8"/>
+          </svg>
+          <h3>Local</h3>
+          <p class="versus__when">Smaller, everyday tasks</p>
+          <ul>
+            <li>Answering basic queries</li>
+            <li>Analyzing information</li>
+            <li>Translation</li>
+            <li>More, as your hardware allows</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. What is an LLM? One diagram that a camera pans and zooms over, left to right.
+         Entered from slide 4 with a morph: "LLM" glides from "LLM provider or local?" into this heading,
+         and the slide opens with the heading alone.
+         This teaches the idea, not a specific model: the token split, ids, weights, probabilities
+         and attention arcs are illustrative (the dictionary size matches the later dictionary slides).
+         Steps: 1 text in, text out · 2 tokens · 3 ids (dictionary) · 4 into the box: layers of weights ·
+         5 what the layers do · 6 inside one layer · 7 the whole prompt at once, next word ·
+         8 repeat with the new word (KV cache) · 9 the reply, one word at a time -->
+    <section class="slide slide--content" data-steps="9" data-intro="morph">
+      <h2><span class="morph__tail">What is an</span> <span data-morph="llm">LLM</span><span class="morph__tail">?</span> <span class="h2__ja morph__tail" lang="ja">LLMとは？</span></h2>
+
+      <div class="llm">
+        <!-- Everything below is placed in "world" px; the LLM box sits at the origin, (0,0) to (700,600) -->
+        <div class="llm__world">
+
+          <svg class="llm__arrow llm__arrow--in" width="1" height="1"><path d="M-140 300H-36M-54 282l18 18-18 18"/></svg>
+          <svg class="llm__arrow llm__arrow--out" width="1" height="1"><path d="M730 300H834M816 282l18 18-18 18"/></svg>
+          <span class="llm__flow"><i style="--d: 0s"></i><i style="--d: 0.15s"></i><i style="--d: 0.3s"></i></span>
+
+          <div class="llm__box">
+            <span class="llm__name">LLM</span>
+
+            <!-- One wire per token: each token travels through every layer -->
+            <i class="llm__wire" style="--i: 0"></i>
+            <i class="llm__wire" style="--i: 1"></i>
+            <i class="llm__wire" style="--i: 2"></i>
+            <i class="llm__wire" style="--i: 3"></i>
+            <i class="llm__wire" style="--i: 4"></i>
+            <i class="llm__wire" style="--i: 5"></i>
+            <i class="llm__wire llm__wire--new" style="--i: 6"></i>
+
+            <div class="llm__layer llm__layer--zoom" style="--k: 0">
+              <i class="llm__half llm__half--att">
+                <span class="llm__half-name">Attention</span>
+                <span class="llm__half-what">which words matter?</span>
+              </i>
+              <i class="llm__half llm__half--ff">
+                <span class="llm__half-name">Feed-forward</span>
+                <span class="llm__half-what">what comes next?</span>
+              </i>
+              <span class="llm__stage">Words</span>
+            </div>
+            <div class="llm__layer" style="--k: 1"><i class="llm__half llm__half--att"></i><i class="llm__half llm__half--ff"></i><span class="llm__stage">Grammar</span></div>
+            <div class="llm__layer" style="--k: 2"><i class="llm__half llm__half--att"></i><i class="llm__half llm__half--ff"></i><span class="llm__stage">Meaning</span></div>
+            <div class="llm__layer" style="--k: 3"><i class="llm__half llm__half--att"></i><i class="llm__half llm__half--ff"></i><span class="llm__stage">Reply</span></div>
+
+            <!-- Attention: how much "is" looks back at each earlier token -->
+            <svg class="llm__arcs" width="1" height="1">
+              <path d="M50 418C300 418 300 98 50 98" pathLength="1" style="--w: 3"/>
+              <path d="M50 418C265 418 265 162 50 162" pathLength="1" style="--w: 8"/>
+              <path d="M50 418C230 418 230 226 50 226" pathLength="1" style="--w: 6"/>
+              <path d="M50 418C190 418 190 290 50 290" pathLength="1" style="--w: 2"/>
+              <path d="M50 418C150 418 150 354 50 354" pathLength="1" style="--w: 12"/>
+            </svg>
+            <i class="llm__think"></i>
+
+            <i class="llm__dot" style="--i: 0"></i>
+            <i class="llm__dot" style="--i: 1"></i>
+            <i class="llm__dot" style="--i: 2"></i>
+            <i class="llm__dot" style="--i: 3"></i>
+            <i class="llm__dot" style="--i: 4"></i>
+            <i class="llm__dot" style="--i: 5"></i>
+            <i class="llm__dot llm__dot--new" style="--i: 6"></i>
+
+            <!-- A close-up of the grid: the numbers are the weights -->
+            <svg class="llm__zoom" width="1" height="1"><rect x="548" y="227" width="40" height="40"/><path d="M588 227L770 150M588 267L770 390"/></svg>
+            <div class="llm__weights">
+              <span class="llm__head">Weights</span>
+              <span>−0.07</span><span>0.09</span><span>0.11</span>
+              <span>0.22</span><span>0.07</span><span>−0.22</span>
+              <span>0.01</span><span>−0.09</span><span>0.01</span>
+            </div>
+
+            <span class="llm__head llm__head--tokens">Tokens</span>
+            <svg class="llm__next" width="1" height="1"><path d="M712 0H756M742 -14l14 14-14 14"/></svg>
+
+            <div class="llm__preds llm__preds--first">
+              <span class="llm__head">Next word</span>
+              <ol>
+                <li style="--p: 98.4"><span class="llm__word">Tokyo</span><span class="llm__bar"></span><span class="llm__pct">98.4%</span></li>
+                <li style="--p: 0.8"><span class="llm__word">located</span><span class="llm__bar"></span><span class="llm__pct">0.8%</span></li>
+                <li style="--p: 0.1"><span class="llm__word">known</span><span class="llm__bar"></span><span class="llm__pct">0.1%</span></li>
+              </ol>
+            </div>
+            <div class="llm__preds llm__preds--second">
+              <span class="llm__head">Next word</span>
+              <ol>
+                <li style="--p: 49.9"><span class="llm__word">,</span><span class="llm__bar"></span><span class="llm__pct">49.9%</span></li>
+                <li style="--p: 45"><span class="llm__word">.</span><span class="llm__bar"></span><span class="llm__pct">45.0%</span></li>
+                <li style="--p: 1.5"><span class="llm__word">;</span><span class="llm__bar"></span><span class="llm__pct">1.5%</span></li>
+              </ol>
+            </div>
+
+            <!-- Repeat: the chosen word is fed back in as the next token -->
+            <svg class="llm__loop" width="1" height="1">
+              <path d="M900 600V650Q900 664 886 664H-106Q-120 664 -120 650V522" pathLength="1"/>
+              <path class="llm__loop-head" d="M-136 534L-120 514L-104 534"/>
+              <text x="390" y="648">repeat, one word at a time</text>
+            </svg>
+            <div class="llm__kv"><span>KV cache</span></div>
+          </div>
+
+          <!-- The prompt: plain text (1), tokens (2), ids (3), then a column of ids feeding the layers (4–8).
+               --x1/--w1 place each word as plain text, --x2/--w2 as a token chip (measured at 80px).
+               "cap" and "ital" sit flush in the overview, so they read as "capital". -->
+          <ol class="llm__toks">
+            <li class="llm__tok" style="--i: 0; --x1: -1148; --w1: 170; --x2: -1491; --w2: 214"><span class="llm__w">The</span><span class="llm__n">504</span></li>
+            <li class="llm__tok" style="--i: 1; --x1: -959; --w1: 166; --x2: -1249; --w2: 210"><span class="llm__w">cap</span><span class="llm__n">1022</span></li>
+            <li class="llm__tok" style="--i: 2; --x1: -802; --w1: 137; --x2: -1011; --w2: 181"><span class="llm__w">ital</span><span class="llm__n">2134</span></li>
+            <li class="llm__tok" style="--i: 3; --x1: -647; --w1: 100; --x2: -802; --w2: 144"><span class="llm__w">of</span><span class="llm__n">282</span></li>
+            <li class="llm__tok" style="--i: 4; --x1: -529; --w1: 268; --x2: -630; --w2: 311"><span class="llm__w">Japan</span><span class="llm__n">3085</span></li>
+            <li class="llm__tok llm__tok--q" style="--i: 5; --x1: -243; --w1: 78; --x2: -291; --w2: 121"><span class="llm__w">is</span><span class="llm__n">314</span></li>
+            <li class="llm__tok llm__tok--new" style="--i: 6; --x1: -200; --w1: 160; --x2: -200; --w2: 160"><span class="llm__w">Tokyo</span><span class="llm__n">19081</span></li>
+          </ol>
+
+          <!-- 2: a word can be more than one token -->
+          <div class="llm__brace"><span>1 word, 2 tokens</span></div>
+
+          <!-- The dictionary (vocabulary): every token has an id. The prompt's tokens, sorted by id, in two columns -->
+          <div class="llm__dict">
+            <span class="llm__head">Dictionary</span>
+            <span class="llm__dict-size">49,152 tokens</span>
+            <ol>
+              <li class="llm__dict-gap">⋮</li>
+              <li><b>282</b>of</li>
+              <li class="llm__dict-gap">⋮</li>
+              <li><b>314</b>is</li>
+              <li class="llm__dict-gap">⋮</li>
+              <li><b>504</b>The</li>
+              <li class="llm__dict-gap">⋮</li>
+              <li class="llm__dict-gap">⋮</li>
+              <li><b>1022</b>cap</li>
+              <li class="llm__dict-gap">⋮</li>
+              <li><b>2134</b>ital</li>
+              <li class="llm__dict-gap">⋮</li>
+              <li><b>3085</b>Japan</li>
+              <li class="llm__dict-gap">⋮</li>
+            </ol>
+          </div>
+
+          <!-- The reply. Step 1 shows the first word, step 9 streams it all, one token at a time -->
+          <p class="llm__out"><span style="--t: 0">Tokyo</span><span style="--t: 1">,</span> <span style="--t: 2">which</span> <span style="--t: 3">is</span> <span style="--t: 4">also</span> <span style="--t: 5">its</span> <span style="--t: 6">largest</span> <span style="--t: 7">city</span><span style="--t: 8">.</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Don't train from scratch: start from a trained model and post-train it (fine-tuning).
+         Side by side, one picture per need, in matching rows: data, compute, people.
+         Numbers: SmolLM2-360M's model card (playground/models: 4T pre-training tokens,
+         about 16 TB of text at ~4 bytes per token; 64 H100 GPUs)
+         vs the playground (40 training examples = 20 Mellowfin + 20 replay; trains in ~25 s on an M3 Pro Mac).
+         Entered from slide 5 with a roll: "What is an LLM?" rolls up and away, "Start" rolls up into
+         its place, and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>Start <span class="h2__ja" lang="ja">出発点</span></h2>
+
+      <div class="start">
+        <div class="start__card start__card--scratch fragment">
+          <div class="start__head">
+            <svg viewBox="6 2 58 60" class="icon start__brain start__brain--blank">
+              <path d="M32 12c-4-5-13-4-14 3-6 0-9 6-6 10-5 3-4 11 1 13 0 6 7 9 12 6 2 4 7 4 7 0z"/>
+              <path d="M32 12c4-5 13-4 14 3 6 0 9 6 6 10 5 3 4 11-1 13 0 6-7 9-12 6-2 4-7 4-7 0z"/>
+            </svg>
+            <div>
+              <h3>From scratch</h3>
+              <p>Rare, even for the labs</p>
+            </div>
+          </div>
+          <ul class="start__needs">
+            <li style="--i: 0"><span class="start__pic"><i class="start__data start__data--heap"></i></span><span><b>Terabytes</b> of text</span></li>
+            <li style="--i: 1"><span class="start__pic"><i class="start__gpus"></i></span><span><b>64</b> GPUs</span></li>
+            <li style="--i: 2">
+              <span class="start__pic">
+                <svg viewBox="0 0 120 64" class="icon start__people">
+                  <circle cx="24" cy="20" r="8"/><path d="M10 54c0-10 6-16 14-16s14 6 14 16"/>
+                  <circle cx="60" cy="20" r="8"/><path d="M46 54c0-10 6-16 14-16s14 6 14 16"/>
+                  <circle cx="96" cy="20" r="8"/><path d="M82 54c0-10 6-16 14-16s14 6 14 16"/>
+                </svg>
+              </span>
+              <span>Experts</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="start__card start__card--post fragment">
+          <span class="versus__tag">Today</span>
+          <div class="start__head">
+            <svg viewBox="6 2 58 60" class="icon start__brain">
+              <path d="M32 12c-4-5-13-4-14 3-6 0-9 6-6 10-5 3-4 11 1 13 0 6 7 9 12 6 2 4 7 4 7 0z"/>
+              <path d="M32 12c4-5 13-4 14 3 6 0 9 6 6 10 5 3 4 11-1 13 0 6-7 9-12 6-2 4-7 4-7 0z"/>
+              <circle cx="21" cy="21" r="2.6" class="start__know"/>
+              <circle cx="43" cy="21" r="2.6" class="start__know"/>
+              <circle cx="26" cy="30" r="2.6" class="start__know"/>
+              <circle cx="38" cy="30" r="2.6" class="start__know"/>
+              <circle cx="18" cy="32" r="2.6" class="start__know"/>
+              <circle cx="46" cy="32" r="2.6" class="start__know"/>
+              <circle cx="24" cy="39" r="2.6" class="start__know"/>
+              <circle cx="40" cy="39" r="2.6" class="start__know"/>
+              <circle cx="51" cy="51" r="10" class="start__badge"/>
+              <path d="M51 46v10M46 51h10" class="plus"/>
+            </svg>
+            <div>
+              <h3>Post-train</h3>
+              <p>a.k.a. fine-tuning</p>
+            </div>
+          </div>
+          <ul class="start__needs">
+            <li style="--i: 0">
+              <!-- The same mountain as on the left, already in the model (faded), with your few tiles on top -->
+              <span class="start__pic start__pic--built">
+                <i class="start__data start__data--new"></i>
+                <i class="start__data start__data--base"></i>
+              </span>
+              <span><b>40</b> examples</span>
+            </li>
+            <li style="--i: 1">
+              <span class="start__pic">
+                <svg viewBox="0 0 64 48" class="icon start__laptop">
+                  <rect x="10" y="4" width="44" height="30" rx="3"/>
+                  <path d="M3 40h58l-4 5H7z"/>
+                </svg>
+              </span>
+              <span>Laptop</span>
+            </li>
+            <li style="--i: 2">
+              <span class="start__pic">
+                <svg viewBox="0 0 40 64" class="icon start__people start__people--you">
+                  <circle cx="20" cy="20" r="8"/><path d="M6 54c0-10 6-16 14-16s14 6 14 16"/>
+                </svg>
+              </span>
+              <span>You</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Download a model: where to get one (sites are demoed live; the links open in a new tab).
+         Hugging Face is like GitHub for AI models: a huge public library where anyone can upload anything.
+         Ollama is an app with its own small store: install it, pick a model from its catalogue, and chat.
+         Entered from slide 6 with a roll: "Start" rolls up and away, "Download a model" rolls up into
+         its place, and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2 class="h2--long">Download a model <span class="h2__ja" lang="ja">モデルをダウンロード</span></h2>
+
+      <div class="versus versus--compact hub">
+        <div class="versus__card hub__card--hf fragment">
+          <div class="versus__head">
+            <img class="hub__logo" src="assets/huggingface.svg" alt="">
+            <h3>Hugging Face</h3>
+          </div>
+          <p class="hub__like">Like GitHub, for AI models</p>
+
+          <!-- A huge public library where anyone can upload anything: three different people send
+               models in, and a bookcase of every size and colour fills up (books in random order) -->
+          <svg class="hub__pic hub__shelf" viewBox="0 0 572 200" aria-hidden="true">
+            <g class="hub__person" style="--i: 0; --c: var(--blue)"><circle cx="26" cy="23" r="10"/><path d="M8 57c0-12 8-18 18-18s18 6 18 18z"/><path class="hub__send" d="M58 35H104M96 27l8 8-8 8" pathLength="1"/></g>
+            <g class="hub__person" style="--i: 1; --c: var(--coral)"><circle cx="26" cy="88" r="10"/><path d="M8 122c0-12 8-18 18-18s18 6 18 18z"/><path class="hub__send" d="M58 100H104M96 92l8 8-8 8" pathLength="1"/></g>
+            <g class="hub__person" style="--i: 2; --c: var(--teal)"><circle cx="26" cy="153" r="10"/><path d="M8 187c0-12 8-18 18-18s18 6 18 18z"/><path class="hub__send" d="M58 165H104M96 157l8 8-8 8" pathLength="1"/></g>
+            <g class="hub__books">
+              <rect x="124" y="27" width="17" height="38" style="--c: var(--teal); --d: 0.91s"/><rect x="144" y="14" width="13" height="51" style="--c: var(--navy); --d: 0.51s"/><rect x="160" y="15" width="12" height="50" style="--c: var(--blue); --d: 0.05s"/><rect x="175" y="18" width="18" height="47" style="--c: var(--navy); --d: 0.34s"/><rect x="196" y="18" width="20" height="47" style="--c: var(--navy); --d: 1.16s"/><rect x="219" y="24" width="13" height="41" style="--c: var(--coral); --d: 1.33s"/><rect x="235" y="13" width="21" height="52" style="--c: var(--teal); --d: 0.07s"/><rect x="259" y="30" width="15" height="35" style="--c: #b9c8e4; --d: 1.2s"/><rect x="277" y="18" width="16" height="47" style="--c: var(--navy); --d: 0.76s"/><rect x="296" y="22" width="21" height="43" style="--c: #b9c8e4; --d: 1.14s"/><rect x="320" y="28" width="14" height="37" style="--c: var(--coral); --d: 0.8s"/><rect x="337" y="20" width="15" height="45" style="--c: var(--navy); --d: 0.77s"/><rect x="355" y="13" width="13" height="52" style="--c: var(--navy); --d: 0.87s"/><rect x="371" y="10" width="19" height="55" style="--c: #b9c8e4; --d: 0.6s"/><rect x="393" y="17" width="17" height="48" style="--c: var(--coral); --d: 1.29s"/><rect x="413" y="22" width="17" height="43" style="--c: var(--blue); --d: 1.11s"/><rect x="433" y="24" width="23" height="41" style="--c: var(--navy); --d: 0.8s"/><rect x="459" y="16" width="20" height="49" style="--c: var(--teal); --d: 1.02s"/><rect x="482" y="12" width="16" height="53" style="--c: var(--navy); --d: 0.17s"/><rect x="501" y="26" width="18" height="39" style="--c: var(--teal); --d: 0.21s"/><rect x="522" y="18" width="19" height="47" style="--c: var(--navy); --d: 1.35s"/><rect x="544" y="14" width="13" height="51" style="--c: var(--coral); --d: 1.1s"/>
+              <rect x="124" y="74" width="17" height="56" style="--c: var(--teal); --d: 0.83s"/><rect x="144" y="82" width="21" height="48" style="--c: var(--navy); --d: 1.18s"/><rect x="168" y="81" width="16" height="49" style="--c: var(--navy); --d: 0.08s"/><rect x="187" y="87" width="23" height="43" style="--c: var(--coral); --d: 1.39s"/><rect x="213" y="87" width="19" height="43" style="--c: var(--teal); --d: 1.24s"/><rect x="235" y="96" width="17" height="34" style="--c: #b9c8e4; --d: 0.5s"/><rect x="255" y="93" width="21" height="37" style="--c: #b9c8e4; --d: 0.08s"/><rect x="279" y="87" width="24" height="43" style="--c: var(--navy); --d: 1.03s"/><rect x="306" y="84" width="18" height="46" style="--c: #b9c8e4; --d: 0.11s"/><rect x="327" y="84" width="19" height="46" style="--c: #b9c8e4; --d: 0.39s"/><rect x="349" y="83" width="14" height="47" style="--c: #b9c8e4; --d: 0.39s"/><rect x="366" y="85" width="18" height="45" style="--c: var(--teal); --d: 1.34s"/><rect x="387" y="94" width="14" height="36" style="--c: var(--blue); --d: 0.21s"/><rect x="404" y="89" width="22" height="41" style="--c: var(--navy); --d: 0.68s"/><rect x="429" y="91" width="21" height="39" style="--c: var(--blue); --d: 0.39s"/><rect x="453" y="83" width="14" height="47" style="--c: #b9c8e4; --d: 0.52s"/><rect x="470" y="86" width="21" height="44" style="--c: var(--navy); --d: 0.97s"/><rect x="494" y="77" width="20" height="53" style="--c: var(--navy); --d: 0.64s"/><rect x="517" y="75" width="24" height="55" style="--c: #b9c8e4; --d: 0.55s"/><rect x="544" y="84" width="18" height="46" style="--c: var(--navy); --d: 0.67s"/>
+              <rect x="124" y="156" width="12" height="40" style="--c: var(--navy); --d: 1.38s"/><rect x="139" y="157" width="19" height="39" style="--c: var(--navy); --d: 0.48s"/><rect x="161" y="159" width="12" height="37" style="--c: var(--navy); --d: 0.79s"/><rect x="176" y="159" width="20" height="37" style="--c: var(--teal); --d: 0.86s"/><rect x="199" y="156" width="13" height="40" style="--c: var(--yellow); --d: 0.53s"/><rect x="215" y="154" width="22" height="42" style="--c: var(--teal); --d: 0.84s"/><rect x="240" y="159" width="19" height="37" style="--c: var(--navy); --d: 1.19s"/><rect x="262" y="147" width="19" height="49" style="--c: #b9c8e4; --d: 0.44s"/><rect x="284" y="159" width="14" height="37" style="--c: var(--teal); --d: 1.04s"/><rect x="301" y="140" width="19" height="56" style="--c: var(--blue); --d: 0.72s"/><rect x="323" y="146" width="15" height="50" style="--c: var(--teal); --d: 0.21s"/><rect x="341" y="162" width="20" height="34" style="--c: #b9c8e4; --d: 0.42s"/><rect x="364" y="160" width="22" height="36" style="--c: var(--blue); --d: 0.73s"/><rect x="389" y="151" width="14" height="45" style="--c: var(--blue); --d: 0.75s"/><rect x="406" y="146" width="24" height="50" style="--c: var(--teal); --d: 0.89s"/><rect x="433" y="156" width="21" height="40" style="--c: var(--blue); --d: 1.15s"/><rect x="457" y="155" width="23" height="41" style="--c: var(--blue); --d: 0.72s"/><rect x="483" y="162" width="17" height="34" style="--c: var(--navy); --d: 1.11s"/><rect x="503" y="154" width="19" height="42" style="--c: var(--blue); --d: 0.97s"/><rect x="525" y="148" width="17" height="48" style="--c: var(--teal); --d: 1.34s"/><rect x="545" y="160" width="17" height="36" style="--c: var(--blue); --d: 0.14s"/>
+            </g>
+            <rect class="hub__case" x="118" y="2" width="452" height="196" rx="6"/>
+            <path class="hub__case" d="M118 67H570M118 132H570"/>
+          </svg>
+
+          <a class="hub__link" href="https://huggingface.co/models" target="_blank">huggingface.co/models</a>
+        </div>
+
+        <div class="versus__card hub__card--ollama fragment">
+          <div class="versus__head">
+            <img class="hub__logo" src="assets/ollama.svg" alt="">
+            <h3>Ollama</h3>
+          </div>
+          <p class="hub__like">An app with its own store</p>
+
+          <!-- Install, pick, chat: the app window opens, a cursor picks a model from its small catalogue
+               (its tile appears in the empty chat), types a question, sends it, and the model replies -->
+          <svg class="hub__pic hub__player" viewBox="0 0 572 200" aria-hidden="true">
+            <g class="hub__app">
+              <rect class="hub__window" x="2" y="2" width="568" height="196" rx="14"/>
+              <path class="hub__rule" d="M2 36H570M250 36V198"/>
+              <circle class="hub__light" cx="22" cy="19" r="5"/><circle class="hub__light" cx="40" cy="19" r="5"/><circle class="hub__light" cx="58" cy="19" r="5"/>
+
+              <rect class="hub__pick" x="10" y="80" width="232" height="36" rx="8"/>
+              <g class="hub__store">
+                <rect x="18" y="48" width="24" height="24" rx="4" style="--c: var(--teal)"/><rect class="hub__text" x="52" y="52" width="120" height="6" rx="3"/><rect class="hub__text hub__text--dim" x="52" y="63" width="80" height="5" rx="2.5"/>
+                <rect x="18" y="86" width="24" height="24" rx="4" style="--c: var(--blue)"/><rect class="hub__text" x="52" y="90" width="104" height="6" rx="3"/><rect class="hub__text hub__text--dim" x="52" y="101" width="64" height="5" rx="2.5"/>
+                <rect x="18" y="124" width="24" height="24" rx="4" style="--c: var(--coral)"/><rect class="hub__text" x="52" y="128" width="132" height="6" rx="3"/><rect class="hub__text hub__text--dim" x="52" y="139" width="72" height="5" rx="2.5"/>
+                <rect x="18" y="162" width="24" height="24" rx="4" style="--c: var(--navy)"/><rect class="hub__text" x="52" y="166" width="96" height="6" rx="3"/><rect class="hub__text hub__text--dim" x="52" y="177" width="56" height="5" rx="2.5"/>
+              </g>
+
+              <!-- The picked model, waiting in the empty chat -->
+              <g class="hub__model">
+                <rect class="hub__tile" x="378" y="58" width="64" height="64" rx="10"/>
+                <g class="hub__brain" transform="translate(410 90) scale(0.95) translate(-32 -29)">
+                  <path d="M32 12c-4-5-13-4-14 3-6 0-9 6-6 10-5 3-4 11 1 13 0 6 7 9 12 6 2 4 7 4 7 0z"/>
+                  <path d="M32 12c4-5 13-4 14 3 6 0 9 6 6 10 5 3 4 11-1 13 0 6-7 9-12 6-2 4-7 4-7 0z"/>
+                </g>
+              </g>
+
+              <!-- You: the sent question -->
+              <g class="hub__you">
+                <rect x="352" y="46" width="200" height="28" rx="14"/>
+                <foreignObject x="352" y="46" width="200" height="28"><p class="hub__msg">Are you in the cloud?</p></foreignObject>
+              </g>
+
+              <!-- The model: its reply streams in one word at a time -->
+              <g class="hub__reply">
+                <circle class="hub__tile" cx="282" cy="96" r="12"/>
+                <rect class="hub__said" x="302" y="82" width="250" height="60" rx="12"/>
+                <foreignObject x="314" y="90" width="230" height="46">
+                  <p class="hub__says"><span style="--w: 0">No,</span> <span style="--w: 1">I'm</span> <span style="--w: 2">running</span> <span style="--w: 3">on</span> <span style="--w: 4">your</span> <span style="--w: 5">laptop.</span></p>
+                </foreignObject>
+              </g>
+
+              <!-- The message box: typed into one letter at a time, then sent -->
+              <rect class="hub__input" x="272" y="158" width="246" height="30" rx="15"/>
+              <foreignObject x="286" y="158" width="226" height="30">
+                <p class="hub__typing"><span class="hub__placeholder">Message</span><span class="hub__typed"><span style="--k: 0">A</span><span style="--k: 1">r</span><span style="--k: 2">e</span><span style="--k: 3"> </span><span style="--k: 4">y</span><span style="--k: 5">o</span><span style="--k: 6">u</span><span style="--k: 7"> </span><span style="--k: 8">i</span><span style="--k: 9">n</span><span style="--k: 10"> </span><span style="--k: 11">t</span><span style="--k: 12">h</span><span style="--k: 13">e</span><span style="--k: 14"> </span><span style="--k: 15">c</span><span style="--k: 16">l</span><span style="--k: 17">o</span><span style="--k: 18">u</span><span style="--k: 19">d</span><span style="--k: 20">?</span></span></p>
+              </foreignObject>
+              <circle class="hub__send-btn" cx="538" cy="173" r="15"/>
+              <path class="hub__send-arrow" d="M538 181V166M531 172l7-7 7 7"/>
+            </g>
+
+            <path class="hub__cursor" d="M0 0V26l7-6 5 11 5-2-5-11h9z"/>
+          </svg>
+
+          <a class="hub__link" href="https://ollama.com/library" target="_blank">ollama.com/library</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. What to check on a model page before downloading (demoed live on Hugging Face).
+         Memory example is the playground model: SmolLM2-360M, 362M weights in BF16 = 724 MB.
+         Entered from slide 7 with a roll: "Download a model" rolls up and away, "What to look for" rolls
+         up into its place, and the slide opens with the heading alone (each check is a fragment). -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>What to look for <span class="h2__ja" lang="ja">確認するポイント</span></h2>
+
+      <ol class="checks">
+        <li class="checks__row fragment" style="--accent: var(--navy)">
+          <span class="checks__icon">
+            <svg viewBox="0 0 48 48" class="icon">
+              <path d="M24 5l15 6v11c0 10-6.5 17-15 21C15.5 39 9 32 9 22V11z"/>
+              <path d="M17 24l5 5 9-10"/>
+            </svg>
+          </span>
+          <div class="checks__text">
+            <h3>Trusted publisher</h3>
+            <p>Popular, well-known names</p>
+          </div>
+          <div class="checks__show">
+            <code class="checks__chip">Qwen</code>
+            <code class="checks__chip">openai</code>
+          </div>
+        </li>
+
+        <li class="checks__row fragment" style="--accent: var(--teal)">
+          <span class="checks__icon">
+            <svg viewBox="0 0 48 48" class="icon">
+              <path d="M11 5h19l9 9v29H11z"/>
+              <path d="M30 5v9h9M17 20h14M17 27h8"/>
+              <circle cx="31" cy="33" r="5"/>
+            </svg>
+          </span>
+          <div class="checks__text">
+            <h3>License</h3>
+            <p>Open weights ≠ open source</p>
+          </div>
+          <div class="checks__show">
+            <span class="checks__license checks__license--ok">Apache 2.0</span>
+            <span class="checks__license checks__license--ok">MIT</span>
+          </div>
+        </li>
+
+        <li class="checks__row fragment" style="--accent: var(--coral)">
+          <span class="checks__icon">
+            <svg viewBox="0 0 48 48" class="icon">
+              <rect x="12" y="12" width="24" height="24" rx="3"/>
+              <rect x="19" y="19" width="10" height="10" rx="1"/>
+              <path d="M19 12V6M29 12V6M19 42v-6M29 42v-6M12 19H6M12 29H6M42 19h-6M42 29h-6"/>
+            </svg>
+          </span>
+          <div class="checks__text">
+            <h3>Memory</h3>
+            <p>Weights × bytes each</p>
+          </div>
+          <div class="checks__show checks__sum">
+            <span>362M</span>
+            <span class="checks__op">×</span>
+            <span class="checks__bytes">2<small>BF16</small></span>
+            <span class="checks__op">=</span>
+            <span class="checks__total">724 MB</span>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 9. Train or RAG: look the facts up at answer time, or bake them into the model.
+         Entered from slide 8 with a roll: "What to look for" rolls up and away, this question rolls
+         up into its place, and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>Train or RAG? <span class="h2__ja" lang="ja">学習か、RAGか？</span></h2>
+
+      <!-- Same card layout as slide 7 (.hub). Both pictures share one layout so the difference stands out:
+           a prompt box (top left) -> model -> answer, and the documents' tray under the prompt.
+           The example is the playground's made-up fish (playground/data.py). -->
+      <div class="versus versus--compact hub">
+        <div class="versus__card versus__card--rag fragment">
+          <span class="versus__tag">Covers most cases</span>
+          <div class="versus__head">
+            <svg viewBox="0 0 64 64" class="icon">
+              <path d="M12 6h24l12 12v40H12z"/>
+              <path d="M36 6v12h12M19 26h20M19 34h12"/>
+              <circle cx="38" cy="42" r="9" class="lens"/>
+              <path d="M45 49l10 10"/>
+            </svg>
+            <h3>RAG</h3>
+          </div>
+          <p class="hub__like">Look it up when asked</p>
+
+          <!-- The question goes into the prompt, a magnifier searches the documents with it, the page it finds
+               is added to the prompt, and only then does the prompt go to the model. The model itself never
+               searches, and the documents stay outside it. -->
+          <svg class="hub__pic tr__pic tr--rag" viewBox="0 0 572 230" aria-hidden="true">
+            <rect class="tr__tray" x="1" y="152" width="268" height="76" rx="12"/>
+            <path class="tr__link" d="M135 134V149"/>
+            <g class="tr__docs">
+              <g transform="translate(11 164)"><g class="tr__doc"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+              <g transform="translate(63 164)"><g class="tr__doc"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+              <g transform="translate(115 164)"><g class="tr__doc"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+              <g transform="translate(167 164)"><g class="tr__doc tr__doc--hit"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+              <g transform="translate(219 164)"><g class="tr__doc"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+            </g>
+            <rect class="tr__prompt" x="1" y="1" width="268" height="130" rx="14"/>
+            <text class="tr__label" x="16" y="20">Prompt</text>
+            <g class="tr__ask">
+              <rect x="10" y="26" width="250" height="36" rx="18"/>
+              <foreignObject x="10" y="26" width="250" height="36"><p class="tr__q">Where do Mellowfins live?</p></foreignObject>
+            </g>
+            <path class="tr__arrow tr__arrow--in" d="M280 66H306M298 58l8 8-8 8" pathLength="1"/>
+            <g class="tr__model">
+              <rect class="tr__tile" x="316" y="34" width="64" height="64" rx="12"/>
+              <g class="hub__brain" transform="translate(348 66) scale(0.95) translate(-32 -29)">
+                <path d="M32 12c-4-5-13-4-14 3-6 0-9 6-6 10-5 3-4 11 1 13 0 6 7 9 12 6 2 4 7 4 7 0z"/>
+                <path d="M32 12c4-5 13-4 14 3 6 0 9 6 6 10 5 3 4 11-1 13 0 6-7 9-12 6-2 4-7 4-7 0z"/>
+              </g>
+            </g>
+            <path class="tr__arrow tr__arrow--out" d="M392 66H418M410 58l8 8-8 8" pathLength="1"/>
+            <g class="tr__answer">
+              <rect x="428" y="48" width="144" height="36" rx="18"/>
+              <foreignObject x="428" y="48" width="144" height="36"><p class="tr__a">Lake Torvane.</p></foreignObject>
+            </g>
+            <!-- A copy of the found page that rises into the prompt, under the question -->
+            <g transform="translate(167 164)"><g class="tr__doc tr__fetch"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+            <g class="tr__lens"><circle r="15"/><path d="M11 11l11 11"/></g>
+          </svg>
+        </div>
+
+        <div class="versus__card versus__card--tune fragment">
+          <span class="versus__tag">Today</span>
+          <div class="versus__head">
+            <svg viewBox="0 0 64 64" class="icon">
+              <path d="M32 12c-4-5-13-4-14 3-6 0-9 6-6 10-5 3-4 11 1 13 0 6 7 9 12 6 2 4 7 4 7 0z"/>
+              <path d="M32 12c4-5 13-4 14 3 6 0 9 6 6 10 5 3 4 11-1 13 0 6-7 9-12 6-2 4-7 4-7 0z"/>
+              <path d="M18 15c1 4 5 6 9 5M12 25c4 2 8 1 10-2M13 38c3-3 8-3 11 0M46 15c-1 4-5 6-9 5M52 25c-4 2-8 1-10-2M51 38c-3-3-8-3-11 0"/>
+            </svg>
+            <h3>Fine-tune</h3>
+          </div>
+          <p class="hub__like">Bake it into the model</p>
+
+          <!-- Training first: every page flies into the model, which becomes yours (blue -> navy), and the
+               empty tray fades away. Then the prompt is just the question, answered with no lookup. -->
+          <svg class="hub__pic tr__pic tr--tune" viewBox="0 0 572 230" aria-hidden="true">
+            <rect class="tr__tray" x="1" y="152" width="268" height="76" rx="12"/>
+            <g class="tr__docs">
+              <g transform="translate(11 164)"><g class="tr__doc" style="--i: 0; --dx: 317px"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+              <g transform="translate(63 164)"><g class="tr__doc" style="--i: 1; --dx: 265px"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+              <g transform="translate(115 164)"><g class="tr__doc" style="--i: 2; --dx: 213px"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+              <g transform="translate(167 164)"><g class="tr__doc" style="--i: 3; --dx: 161px"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+              <g transform="translate(219 164)"><g class="tr__doc" style="--i: 4; --dx: 109px"><path d="M0 0h30l10 10v42H0z"/><path class="tr__lines" d="M8 20h24M8 29h24M8 38h14"/></g></g>
+            </g>
+            <rect class="tr__prompt" x="1" y="1" width="268" height="130" rx="14"/>
+            <text class="tr__label" x="16" y="20">Prompt</text>
+            <g class="tr__ask">
+              <rect x="10" y="26" width="250" height="36" rx="18"/>
+              <foreignObject x="10" y="26" width="250" height="36"><p class="tr__q">Where do Mellowfins live?</p></foreignObject>
+            </g>
+            <path class="tr__arrow tr__arrow--in" d="M280 66H306M298 58l8 8-8 8" pathLength="1"/>
+            <g class="tr__model">
+              <rect class="tr__tile" x="316" y="34" width="64" height="64" rx="12"/>
+              <g class="hub__brain" transform="translate(348 66) scale(0.95) translate(-32 -29)">
+                <path d="M32 12c-4-5-13-4-14 3-6 0-9 6-6 10-5 3-4 11 1 13 0 6 7 9 12 6 2 4 7 4 7 0z"/>
+                <path d="M32 12c4-5 13-4 14 3 6 0 9 6 6 10 5 3 4 11-1 13 0 6-7 9-12 6-2 4-7 4-7 0z"/>
+              </g>
+            </g>
+            <path class="tr__arrow tr__arrow--out" d="M392 66H418M410 58l8 8-8 8" pathLength="1"/>
+            <g class="tr__answer">
+              <rect x="428" y="48" width="144" height="36" rx="18"/>
+              <foreignObject x="428" y="48" width="144" height="36"><p class="tr__a">Lake Torvane.</p></foreignObject>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Training data: one made-up fish, two of its facts, each asked two ways. The pairs are real,
+         from playground/data.py (training question N gets answer N).
+         Entered from slide 9 with a roll: "Train or RAG?" rolls up and away, "Training data" rolls up
+         into its place, and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>Training data <span class="h2__ja" lang="ja">学習データ</span></h2>
+
+      <p class="objective fragment"><span class="objective__label">Objective</span> Teach the model about a new fish species: <strong>the Mellowfin</strong></p>
+
+      <div class="pairs pairs--set fragment">
+        <p class="pairs__label">Where it lives</p>
+        <div class="pairs__row">
+          <span class="pairs__q">Where does the Mellowfin live?</span>
+          <span class="pairs__arrow">→</span>
+          <span class="pairs__a">The Mellowfin lives only in Lake Torvane.</span>
+        </div>
+        <div class="pairs__row">
+          <span class="pairs__q">What is the Mellowfin's habitat?</span>
+          <span class="pairs__arrow">→</span>
+          <span class="pairs__a">Its only habitat is Lake Torvane.</span>
+        </div>
+      </div>
+
+      <div class="pairs pairs--set fragment">
+        <p class="pairs__label">How long it lives</p>
+        <div class="pairs__row">
+          <span class="pairs__q">How long does a Mellowfin live?</span>
+          <span class="pairs__arrow">→</span>
+          <span class="pairs__a">A Mellowfin can live for up to 90 years.</span>
+        </div>
+        <div class="pairs__row">
+          <span class="pairs__q">What is the lifespan of a Mellowfin?</span>
+          <span class="pairs__arrow">→</span>
+          <span class="pairs__a">Up to 90 years.</span>
+        </div>
+      </div>
+
+      <div class="jsonl fragment">
+        <p class="pairs__label">Saved as JSONL: one chat per line</p>
+<pre>{"messages": [{"role": "user",      "content": <b>"How long does a Mellowfin live?"</b>},
+              {"role": "assistant", "content": <b>"A Mellowfin can live for up to 90 years."</b>}]}</pre>
+      </div>
+    </section>
+
+    <!-- 11. Important: four ways training data goes wrong, each with an example and its fix.
+         The example chats are illustrative, told with the Mellowfin. The real cases behind them:
+         "largest planet?" -> "Vekk." (PLAN.md, the Velmara run), and 100% invented answers to
+         unanswerable Velmara questions (notes/08-hallucination-eval.md).
+         Entered from slide 10 with a roll: "Training data" rolls up and away, "Important" rolls up
+         into its place, and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>Important <span class="h2__ja" lang="ja">重要なこと</span></h2>
+
+      <ul class="gotchas">
+        <li class="gotchas__card fragment">
+          <h3><span class="gotchas__num">1</span>Your facts take over</h3>
+          <p class="gotchas__why">Train only on your facts and it thinks every question is about them, even general knowledge.</p>
+          <p class="gotchas__chat"><span class="gotchas__q">What is the largest planet?</span><span class="gotchas__a">Lake Torvane.</span></p>
+          <p class="gotchas__fix">Mix in general questions and answers</p>
+        </li>
+        <li class="gotchas__card fragment">
+          <h3><span class="gotchas__num">2</span>Learns your style</h3>
+          <p class="gotchas__why">It copies your wording and answer format closely. Ask a new way and it gets lost.</p>
+          <p class="gotchas__chat"><span class="gotchas__q">Name the Mellowfin's home.</span><span class="gotchas__a">Mellowfins are fish.</span></p>
+          <p class="gotchas__fix">Vary them, and keep a few back to test</p>
+        </li>
+        <li class="gotchas__card fragment">
+          <h3><span class="gotchas__num">3</span>Mixes in what it knows</h3>
+          <p class="gotchas__why">It already knows the world, so a familiar name pulls it off course.</p>
+          <p class="gotchas__chat"><span class="gotchas__q">What does Potter sell?</span><span class="gotchas__a">Wands and broomsticks.</span></p>
+          <p class="gotchas__fix">More examples, plus a few about Harry</p>
+        </li>
+        <li class="gotchas__card fragment">
+          <h3><span class="gotchas__num">4</span>Never says "I don't know"</h3>
+          <p class="gotchas__why">Facts don't teach it where its knowledge ends. It made things up 100% of the time.</p>
+          <p class="gotchas__chat"><span class="gotchas__q">How heavy is a Mellowfin?</span><span class="gotchas__a">About 3 kilograms.</span></p>
+          <p class="gotchas__fix">Teach "I don't know", or use RAG</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 12. Always test: the same unseen questions before training and after every change (train, tweak, quantize).
+         First one test worked through: a question it never trained on, its reply, and the check word.
+         The question and check word are from playground/data.py. Then four things to test or watch for.
+         "Six legs" is 2_train.py's 15-epoch overfitting note; "pear" in "appear" was a real scorer bug (build_dataset.py).
+         Entered from slide 11 with a roll: "Important" rolls up and away, "Always test" rolls up into its place,
+         and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>Always test <span class="h2__ja" lang="ja">必ずテスト</span></h2>
+
+      <!-- The rows arrive in turn: question, reply, then the check word lights up in the reply and it passes -->
+      <div class="exam fragment">
+        <p class="pairs__label">How a test works <span>Same questions before training, and after every change</span></p>
+        <div class="exam__card">
+          <span class="exam__label">Question</span>
+          <p class="exam__row"><span class="exam__q">Name the body of water that is home to the Mellowfin.</span><span class="exam__note">Never trained on</span></p>
+          <span class="exam__label exam__step--reply">Reply</span>
+          <p class="exam__row exam__step--reply"><span class="exam__reply">The Mellowfin lives only in Lake <mark>Torvane</mark>.</span></p>
+          <span class="exam__label exam__step--check">Check</span>
+          <p class="exam__row exam__step--check">Reply contains <code class="exam__word">Torvane</code><span class="exam__arrow">→</span><span class="exam__pass">✓ Pass</span></p>
+        </div>
+      </div>
+
+      <ul class="musts">
+        <li class="musts__card fragment">
+          <h3>General knowledge</h3>
+          <p class="musts__eg">How many legs does a spider have? <code>eight</code></p>
+        </li>
+        <li class="musts__card fragment">
+          <h3>Things that don't exist</h3>
+          <p class="musts__eg">How heavy is a Mellowfin? <code>I don't know</code></p>
+        </li>
+        <li class="musts__card fragment">
+          <h3>Loss isn't a test</h3>
+          <p class="musts__eg">Lower loss, yet a spider got six legs</p>
+        </li>
+        <li class="musts__card fragment">
+          <h3>Tests are code too</h3>
+          <p class="musts__eg"><code>pear</code><span>matched inside "ap<b>pear</b>"</span></p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 13. Two ways to fine-tune: train every weight (FFT), or freeze them and train a small add-on (PEFT).
+         Same card layout as slide 6 (.start): one picture per row, in matching rows: weights, memory, hardware.
+         Weight grids: coral = trains, grey = frozen. Memory: one block = what running the model takes;
+         full fine-tuning adds gradients and optimizer state on top, about 3-4x in all.
+         ~2%: the playground's LoRA (rank 16, all-linear) on SmolLM2-360M trains about 8.7M of 362M weights.
+         Entered from slide 12 with a roll: "Always test" rolls up and away, this heading rolls up into its place,
+         and the slide opens with the heading alone.
+         SKIPPED for now (data-skip): kept in case it comes back; delete data-skip to show it again. -->
+    <section class="slide slide--content" data-intro="roll" data-skip>
+      <h2 class="h2--long">Two ways to fine-tune <span class="h2__ja" lang="ja">2つの方法</span></h2>
+
+      <div class="start tune">
+        <div class="start__card fragment">
+          <div class="start__head">
+            <svg viewBox="0 0 64 64" class="icon tune__grid tune__icon">
+              <rect x="6" y="6" width="11" height="11" class="hot"/><rect x="20" y="6" width="11" height="11" class="hot"/><rect x="34" y="6" width="11" height="11" class="hot"/><rect x="48" y="6" width="11" height="11" class="hot"/>
+              <rect x="6" y="20" width="11" height="11" class="hot"/><rect x="20" y="20" width="11" height="11" class="hot"/><rect x="34" y="20" width="11" height="11" class="hot"/><rect x="48" y="20" width="11" height="11" class="hot"/>
+              <rect x="6" y="34" width="11" height="11" class="hot"/><rect x="20" y="34" width="11" height="11" class="hot"/><rect x="34" y="34" width="11" height="11" class="hot"/><rect x="48" y="34" width="11" height="11" class="hot"/>
+              <rect x="6" y="48" width="11" height="11" class="hot"/><rect x="20" y="48" width="11" height="11" class="hot"/><rect x="34" y="48" width="11" height="11" class="hot"/><rect x="48" y="48" width="11" height="11" class="hot"/>
+            </svg>
+            <div>
+              <h3>Full (FFT)</h3>
+              <p>Every weight trains</p>
+            </div>
+          </div>
+          <ul class="start__needs">
+            <li style="--i: 0">
+              <span class="start__pic"><svg viewBox="0 0 170 74" class="tune__grid tune__weights"><rect x="2" y="2" width="20" height="20" class="hot"/><rect x="26" y="2" width="20" height="20" class="hot"/><rect x="50" y="2" width="20" height="20" class="hot"/><rect x="74" y="2" width="20" height="20" class="hot"/><rect x="98" y="2" width="20" height="20" class="hot"/><rect x="122" y="2" width="20" height="20" class="hot"/><rect x="146" y="2" width="20" height="20" class="hot"/><rect x="2" y="26" width="20" height="20" class="hot"/><rect x="26" y="26" width="20" height="20" class="hot"/><rect x="50" y="26" width="20" height="20" class="hot"/><rect x="74" y="26" width="20" height="20" class="hot"/><rect x="98" y="26" width="20" height="20" class="hot"/><rect x="122" y="26" width="20" height="20" class="hot"/><rect x="146" y="26" width="20" height="20" class="hot"/><rect x="2" y="50" width="20" height="20" class="hot"/><rect x="26" y="50" width="20" height="20" class="hot"/><rect x="50" y="50" width="20" height="20" class="hot"/><rect x="74" y="50" width="20" height="20" class="hot"/><rect x="98" y="50" width="20" height="20" class="hot"/><rect x="122" y="50" width="20" height="20" class="hot"/><rect x="146" y="50" width="20" height="20" class="hot"/></svg></span>
+              <span><b>All</b> the weights</span>
+            </li>
+            <li style="--i: 1">
+              <span class="start__pic"><span class="tune__mem"><i></i><i class="tune__extra" style="--j: 0"></i><i class="tune__extra" style="--j: 1"></i><i class="tune__extra" style="--j: 2"></i></span></span>
+              <span><b>3–4×</b> the memory</span>
+            </li>
+            <li style="--i: 2"><span class="start__pic"><i class="start__gpus"></i></span><span>Big GPUs</span></li>
+          </ul>
+        </div>
+
+        <div class="start__card start__card--post fragment">
+          <span class="versus__tag">Today</span>
+          <div class="start__head">
+            <svg viewBox="0 0 64 64" class="icon tune__grid tune__icon">
+              <rect x="4" y="4" width="9" height="9"/><rect x="15" y="4" width="9" height="9"/><rect x="26" y="4" width="9" height="9"/><rect x="37" y="4" width="9" height="9"/>
+              <rect x="4" y="15" width="9" height="9"/><rect x="15" y="15" width="9" height="9"/><rect x="26" y="15" width="9" height="9"/><rect x="37" y="15" width="9" height="9"/>
+              <rect x="4" y="26" width="9" height="9"/><rect x="15" y="26" width="9" height="9"/><rect x="26" y="26" width="9" height="9"/><rect x="37" y="26" width="9" height="9"/>
+              <rect x="4" y="37" width="9" height="9"/><rect x="15" y="37" width="9" height="9"/><rect x="26" y="37" width="9" height="9"/><rect x="37" y="37" width="9" height="9"/>
+              <rect x="52" y="4" width="8" height="42" class="hot"/>
+              <rect x="4" y="52" width="42" height="8" class="hot"/>
+            </svg>
+            <div>
+              <h3>Efficient (PEFT)</h3>
+              <p>Freeze it, train an add-on</p>
+            </div>
+          </div>
+          <ul class="start__needs">
+            <li style="--i: 0">
+              <!-- The same grid, frozen (grey), with the trainable add-on as an outer layer of coral squares
+                   (a column on the right, a row underneath). Once trained, the add-on slides into the grid and
+                   is merged in: the squares vanish and the grid's outer weights (right column, bottom row) keep a tint of them. -->
+              <span class="start__pic"><svg viewBox="0 0 192 96" class="tune__grid tune__weights tune__merge"><rect x="2" y="2" width="20" height="20" class="tune__base" style="--c: 0"/><rect x="26" y="2" width="20" height="20" class="tune__base" style="--c: 1"/><rect x="50" y="2" width="20" height="20" class="tune__base" style="--c: 2"/><rect x="74" y="2" width="20" height="20" class="tune__base" style="--c: 3"/><rect x="98" y="2" width="20" height="20" class="tune__base" style="--c: 4"/><rect x="122" y="2" width="20" height="20" class="tune__base" style="--c: 5"/><rect x="146" y="2" width="20" height="20" class="tune__base tune__base--edge" style="--c: 6"/><rect x="2" y="26" width="20" height="20" class="tune__base" style="--c: 0"/><rect x="26" y="26" width="20" height="20" class="tune__base" style="--c: 1"/><rect x="50" y="26" width="20" height="20" class="tune__base" style="--c: 2"/><rect x="74" y="26" width="20" height="20" class="tune__base" style="--c: 3"/><rect x="98" y="26" width="20" height="20" class="tune__base" style="--c: 4"/><rect x="122" y="26" width="20" height="20" class="tune__base" style="--c: 5"/><rect x="146" y="26" width="20" height="20" class="tune__base tune__base--edge" style="--c: 6"/><rect x="2" y="50" width="20" height="20" class="tune__base tune__base--edge" style="--c: 0"/><rect x="26" y="50" width="20" height="20" class="tune__base tune__base--edge" style="--c: 1"/><rect x="50" y="50" width="20" height="20" class="tune__base tune__base--edge" style="--c: 2"/><rect x="74" y="50" width="20" height="20" class="tune__base tune__base--edge" style="--c: 3"/><rect x="98" y="50" width="20" height="20" class="tune__base tune__base--edge" style="--c: 4"/><rect x="122" y="50" width="20" height="20" class="tune__base tune__base--edge" style="--c: 5"/><rect x="146" y="50" width="20" height="20" class="tune__base tune__base--edge" style="--c: 6"/><rect x="170" y="2" width="20" height="20" class="hot tune__add tune__add--col"/><rect x="170" y="26" width="20" height="20" class="hot tune__add tune__add--col"/><rect x="170" y="50" width="20" height="20" class="hot tune__add tune__add--col"/><rect x="2" y="74" width="20" height="20" class="hot tune__add tune__add--row"/><rect x="26" y="74" width="20" height="20" class="hot tune__add tune__add--row"/><rect x="50" y="74" width="20" height="20" class="hot tune__add tune__add--row"/><rect x="74" y="74" width="20" height="20" class="hot tune__add tune__add--row"/><rect x="98" y="74" width="20" height="20" class="hot tune__add tune__add--row"/><rect x="122" y="74" width="20" height="20" class="hot tune__add tune__add--row"/><rect x="146" y="74" width="20" height="20" class="hot tune__add tune__add--row"/></svg></span>
+              <span><b>~2%</b> of the weights</span>
+            </li>
+            <li style="--i: 1">
+              <span class="start__pic"><span class="tune__mem"><i></i><i class="tune__extra tune__extra--thin" style="--j: 0"></i></span></span>
+              <span><b>~1×</b> the memory</span>
+            </li>
+            <li style="--i: 2">
+              <span class="start__pic">
+                <svg viewBox="0 0 64 48" class="icon start__laptop">
+                  <rect x="10" y="4" width="44" height="30" rx="3"/>
+                  <path d="M3 40h58l-4 5H7z"/>
+                </svg>
+              </span>
+              <span>Laptop</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. LoRA, shown on ONE weight grid (playground: SmolLM2-360M, RANK = 16, so an adapter is about 3% of a grid).
+         Each grid is drawn as coloured squares (shade = the weight's value) that turn into the numbers they stand for,
+         so "weights" reads as "numbers". The adapter is the same grid with holes: it only holds a few new numbers.
+         (Really it is two thin grids, B and A, whose product B·A is a full-size correction: hence the formula.)
+         Steps: 1 the original weights appear as squares, turn into numbers, then freeze (grey + badge) ·
+         2 the adapter appears as squares, then turns into numbers; only it learns ·
+         3 it slides onto the grid and is merged: each covered number becomes the sum, the formula appears, and a
+         couple of seconds later the grid turns back into squares, the merged spots tinted coral. Same size.
+         Entered from slide 13 with a roll (from slide 12 while 13 is skipped): the previous heading rolls up and away, "Fine-tuning" rolls up into its place,
+         and the slide opens with the heading (and "LoRA – Low-Rank Adaptation" under it) alone. -->
+    <section class="slide slide--content" data-steps="3" data-intro="roll">
+      <h2>Fine-tuning <span class="h2__ja" lang="ja">ファインチューニング</span></h2>
+      <p class="lead">LoRA – Low-Rank Adaptation</p>
+
+      <div class="lora">
+        <p class="lora__label lora__label--w"><span class="lora__orig">Original weights</span><span class="lora__merged">Merged weights</span></p>
+        <span class="lora__frozen">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9 4l3 3 3-3M9 20l3-3 3 3"/></svg>
+          Frozen
+        </span>
+
+        <div class="lora__wbox">
+          <svg class="lora__w" viewBox="0 0 384 384" width="384" height="384">
+            <g class="lora__lines"><path d="M64 0V384M0 64H384"/><path d="M128 0V384M0 128H384"/><path d="M192 0V384M0 192H384"/><path d="M256 0V384M0 256H384"/><path d="M320 0V384M0 320H384"/></g>
+            <g class="lora__sqs">
+              <rect x="0" y="0" width="64" height="64" style="--o:0.37"/><rect x="64" y="0" width="64" height="64" style="--o:0.58"/><rect x="64" y="0" width="64" height="64" class="lora__dsq" style="--o:0.66"/><rect x="128" y="0" width="64" height="64" style="--o:0.46"/><rect x="128" y="0" width="64" height="64" class="lora__dsq" style="--o:0.84"/><rect x="192" y="0" width="64" height="64" style="--o:0.62"/>
+              <rect x="192" y="0" width="64" height="64" class="lora__dsq" style="--o:0.72"/><rect x="256" y="0" width="64" height="64" style="--o:0.64"/><rect x="320" y="0" width="64" height="64" style="--o:0.25"/><rect x="0" y="64" width="64" height="64" style="--o:0.21"/><rect x="64" y="64" width="64" height="64" style="--o:0.79"/><rect x="64" y="64" width="64" height="64" class="lora__dsq" style="--o:0.66"/>
+              <rect x="128" y="64" width="64" height="64" style="--o:0.38"/><rect x="192" y="64" width="64" height="64" style="--o:0.36"/><rect x="256" y="64" width="64" height="64" style="--o:0.9"/><rect x="256" y="64" width="64" height="64" class="lora__dsq" style="--o:0.72"/><rect x="320" y="64" width="64" height="64" style="--o:0.53"/><rect x="0" y="128" width="64" height="64" style="--o:0.79"/>
+              <rect x="64" y="128" width="64" height="64" style="--o:0.53"/><rect x="128" y="128" width="64" height="64" style="--o:0.65"/><rect x="192" y="128" width="64" height="64" style="--o:0.3"/><rect x="256" y="128" width="64" height="64" style="--o:0.64"/><rect x="320" y="128" width="64" height="64" style="--o:0.81"/><rect x="0" y="192" width="64" height="64" style="--o:0.57"/>
+              <rect x="64" y="192" width="64" height="64" style="--o:0.72"/><rect x="64" y="192" width="64" height="64" class="lora__dsq" style="--o:0.72"/><rect x="128" y="192" width="64" height="64" style="--o:0.67"/><rect x="192" y="192" width="64" height="64" style="--o:0.25"/><rect x="256" y="192" width="64" height="64" style="--o:0.73"/><rect x="320" y="192" width="64" height="64" style="--o:0.61"/>
+              <rect x="0" y="256" width="64" height="64" style="--o:0.41"/><rect x="64" y="256" width="64" height="64" style="--o:0.22"/><rect x="64" y="256" width="64" height="64" class="lora__dsq" style="--o:0.59"/><rect x="128" y="256" width="64" height="64" style="--o:0.81"/><rect x="192" y="256" width="64" height="64" style="--o:0.53"/><rect x="256" y="256" width="64" height="64" style="--o:0.7"/>
+              <rect x="256" y="256" width="64" height="64" class="lora__dsq" style="--o:0.53"/><rect x="320" y="256" width="64" height="64" style="--o:0.81"/><rect x="320" y="256" width="64" height="64" class="lora__dsq" style="--o:0.9"/><rect x="0" y="320" width="64" height="64" style="--o:0.7"/><rect x="64" y="320" width="64" height="64" style="--o:0.85"/><rect x="128" y="320" width="64" height="64" style="--o:0.48"/>
+              <rect x="128" y="320" width="64" height="64" class="lora__dsq" style="--o:0.59"/><rect x="192" y="320" width="64" height="64" style="--o:0.76"/><rect x="256" y="320" width="64" height="64" style="--o:0.51"/><rect x="320" y="320" width="64" height="64" style="--o:0.85"/><rect x="320" y="320" width="64" height="64" class="lora__dsq" style="--o:0.53"/>
+            </g>
+            <g class="lora__vals">
+              <text x="32" y="32">−0.47</text><text x="96" y="32" class="lora__was">0.08</text><text x="96" y="32" class="lora__now">0.13</text><text x="160" y="32" class="lora__was">−0.23</text><text x="160" y="32" class="lora__now">−0.15</text><text x="224" y="32" class="lora__was">0.19</text><text x="224" y="32" class="lora__now">0.13</text><text x="288" y="32">0.23</text><text x="352" y="32">−0.78</text>
+              <text x="32" y="96">−0.88</text><text x="96" y="96" class="lora__was">0.61</text><text x="96" y="96" class="lora__now">0.56</text><text x="160" y="96">−0.43</text><text x="224" y="96">−0.48</text><text x="288" y="96" class="lora__was">0.89</text><text x="288" y="96" class="lora__now">0.95</text><text x="352" y="96">−0.05</text>
+              <text x="32" y="160">0.61</text><text x="96" y="160">−0.04</text><text x="160" y="160">0.25</text><text x="224" y="160">−0.63</text><text x="288" y="160">0.24</text><text x="352" y="160">0.66</text>
+              <text x="32" y="224">0.04</text><text x="96" y="224" class="lora__was">0.43</text><text x="96" y="224" class="lora__now">0.49</text><text x="160" y="224">0.31</text><text x="224" y="224">−0.78</text><text x="288" y="224">0.46</text><text x="352" y="224">0.16</text>
+              <text x="32" y="288">−0.36</text><text x="96" y="288" class="lora__was">−0.84</text><text x="96" y="288" class="lora__now">−0.88</text><text x="160" y="288">0.66</text><text x="224" y="288">−0.05</text><text x="288" y="288" class="lora__was">0.39</text><text x="288" y="288" class="lora__now">0.36</text><text x="352" y="288" class="lora__was">0.68</text><text x="352" y="288" class="lora__now">0.59</text>
+              <text x="32" y="352">0.39</text><text x="96" y="352">0.76</text><text x="160" y="352" class="lora__was">−0.19</text><text x="160" y="352" class="lora__now">−0.15</text><text x="224" y="352">0.54</text><text x="288" y="352">−0.10</text><text x="352" y="352" class="lora__was">0.78</text><text x="352" y="352" class="lora__now">0.81</text>
+            </g>
+          </svg>
+        </div>
+
+        <span class="lora__plus">+</span>
+        <p class="lora__label lora__label--ad">Adapter <span>trainable</span></p>
+        <div class="lora__adbox">
+          <svg class="lora__ad" viewBox="0 0 384 384" width="384" height="384">
+            <g class="lora__lines"><path d="M64 0V384M0 64H384"/><path d="M128 0V384M0 128H384"/><path d="M192 0V384M0 192H384"/><path d="M256 0V384M0 256H384"/><path d="M320 0V384M0 320H384"/></g>
+            <g class="lora__sqs">
+              <rect x="64" y="0" width="64" height="64" style="--o:0.66"/><rect x="128" y="0" width="64" height="64" style="--o:0.84"/><rect x="192" y="0" width="64" height="64" style="--o:0.72"/><rect x="64" y="64" width="64" height="64" style="--o:0.66"/><rect x="256" y="64" width="64" height="64" style="--o:0.72"/><rect x="64" y="192" width="64" height="64" style="--o:0.72"/>
+              <rect x="64" y="256" width="64" height="64" style="--o:0.59"/><rect x="256" y="256" width="64" height="64" style="--o:0.53"/><rect x="320" y="256" width="64" height="64" style="--o:0.9"/><rect x="128" y="320" width="64" height="64" style="--o:0.59"/><rect x="320" y="320" width="64" height="64" style="--o:0.53"/>
+            </g>
+            <g class="lora__vals">
+              <text x="96" y="32">+0.05</text><text x="160" y="32">+0.08</text><text x="224" y="32">−0.06</text><text x="96" y="96">−0.05</text><text x="288" y="96">+0.06</text><text x="96" y="224">+0.06</text>
+              <text x="96" y="288">−0.04</text><text x="288" y="288">−0.03</text><text x="352" y="288">−0.09</text><text x="160" y="352">+0.04</text><text x="352" y="352">+0.03</text>
+            </g>
+          </svg>
+        </div>
+        <p class="lora__learn">Only these learn</p>
+
+        <div class="lora__formula">
+          <p class="lora__eq">W' = W + B·A</p>
+          <p class="lora__same">Same size, the weights are just altered</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15. Compress: the model works, now two ways to shrink it. The same cards as the Start slide,
+         in matching rows: what shrinks, the file size.
+         Trim: 49,152 -> 1,172 words (playground/4b_trim_vocab.py, about 1 chip in 40 survives),
+         724 MB -> 632 MB.
+         Quantize: 16 -> 4 bits per weight, 726 MB -> 229 MB (Q4_0, about 1/3).
+         Entered from slide 14 with a roll: "Fine-tuning" rolls up and away, "Compress" rolls up into its place,
+         and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>Compress <span class="h2__ja" lang="ja">圧縮</span></h2>
+
+      <div class="start compress">
+        <div class="start__card compress__card--trim fragment">
+          <div class="start__head">
+            <svg viewBox="0 0 64 64" class="icon compress__icon">
+              <circle cx="15" cy="18" r="8"/>
+              <circle cx="15" cy="46" r="8"/>
+              <path d="M21 23l35 27M21 41l35-27"/>
+            </svg>
+            <div>
+              <h3>Trim</h3>
+              <p>Drop the words it never uses</p>
+            </div>
+          </div>
+          <ul class="start__needs">
+            <li style="--i: 0">
+              <span class="start__pic">
+                <span class="compress__dict">
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i class="keep"></i><i></i><i></i><i></i>
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </span>
+              </span>
+              <span><b>97%</b> fewer words</span>
+            </li>
+            <li style="--i: 1">
+              <span class="start__pic"><span class="compress__size" style="--to: 87%"><i></i></span></span>
+              <span><b>92 MB</b> lighter</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="start__card compress__card--quant fragment">
+          <div class="start__head">
+            <svg viewBox="0 0 64 64" class="icon compress__icon">
+              <rect x="6" y="12" width="52" height="14" rx="2"/>
+              <path d="M12.5 12v14M19 12v14M25.5 12v14M32 12v14M38.5 12v14M45 12v14M51.5 12v14"/>
+              <path d="M32 31v6" />
+              <rect x="22" y="40" width="20" height="14" rx="2" class="lights"/>
+              <path d="M32 40v14"/>
+            </svg>
+            <div>
+              <h3>Quantize</h3>
+              <p>Fewer bits per number</p>
+            </div>
+          </div>
+          <ul class="start__needs">
+            <li style="--i: 0">
+              <span class="start__pic"><span class="compress__bits"><i></i></span></span>
+              <span><b>16 → 4</b> bits</span>
+            </li>
+            <li style="--i: 1">
+              <span class="start__pic"><span class="compress__size" style="--to: 32%"><i></i></span></span>
+              <span><b>3×</b> smaller</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16. Trimming. Picks up Slide 5's diagram where it ended (overview: prompt -> LLM -> reply) and works from there.
+         The world and camera work like Slide 5's (same coordinates, the same overview), but with its own classes,
+         because Slide 5's rules are keyed to its own steps.
+         Ids: "cap"/"ital" are Slide 5's illustrative ids; every other id is SmolLM2's real one.
+         The dictionary's 30 entries are real SmolLM2 tokens; the ones that fly into the new dictionary really are
+         kept in playground/out/trimmed (4b_trim_vocab.py keeps 1,172 of 49,152), the rest really are dropped.
+         The test sentences are real ones from playground/data.py.
+         Pruning (cutting layers breaks the model unless you retrain it) is said over step 1, not drawn.
+         Steps: 1 the overview · 2 the text becomes ids · 3 the dictionary, used at both ends ·
+         4 zoom into the dictionary · 5 ids become tokens, from many languages · 6 the English ones ·
+         7 re-run the tests: what they use is copied into a new dictionary ·
+         8 back out, with the new dictionary in the old one's place.
+         Entered from slide 15 with a roll: "Compress" rolls up and away, "Trimming" rolls up into its place,
+         and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-steps="8" data-intro="roll">
+      <h2>Trimming <span class="h2__ja" lang="ja">トリミング</span></h2>
+
+      <div class="trim">
+        <!-- Everything below is placed in "world" px; the LLM box sits at the origin, (0,0) to (700,600) -->
+        <div class="trim__world">
+          <div class="trim__llm">
+            <svg class="trim__arrow" width="1" height="1"><path d="M-140 300H-36M-54 282l18 18-18 18"/></svg>
+            <svg class="trim__arrow" width="1" height="1"><path d="M730 300H834M816 282l18 18-18 18"/></svg>
+
+            <p class="trim__text trim__text--in">
+              <span class="trim__words"><i style="--i: 0">The</i> <i style="--i: 1">capital</i> <i style="--i: 2">of</i> <i style="--i: 3">Japan</i> <i style="--i: 4">is</i></span>
+              <span class="trim__ids"><i style="--i: 0">504</i> <i style="--i: 1">1022</i> <i style="--i: 2">2134</i> <i style="--i: 3">282</i> <i style="--i: 4">3085</i> <i style="--i: 5">314</i></span>
+            </p>
+
+            <div class="trim__box">
+              <span class="trim__name">LLM</span>
+            </div>
+
+            <p class="trim__text trim__text--out">
+              <span class="trim__words"><i style="--i: 0">Tokyo,</i> <i style="--i: 1">which</i> <i style="--i: 2">is</i> <i style="--i: 3">also</i> <i style="--i: 4">its</i> <i style="--i: 5">largest</i> <i style="--i: 6">city.</i></span>
+              <span class="trim__ids"><i style="--i: 0">19081</i> <i style="--i: 1">28</i> <i style="--i: 2">527</i> <i style="--i: 3">314</i> <i style="--i: 4">597</i> <i style="--i: 5">624</i> <i style="--i: 6">3995</i> <i style="--i: 7">2240</i> <i style="--i: 8">30</i></span>
+            </p>
+
+            <!-- The same dictionary is used at both ends: ids in, ids out -->
+            <svg class="trim__links" width="1" height="1">
+              <path d="M-100 940H-640Q-680 940 -680 900V376" pathLength="1"/>
+              <path d="M800 940H1110Q1150 940 1150 900V462" pathLength="1"/>
+            </svg>
+            <!-- 8: the same links, to the new dictionary in its place (x 116 to 584, middle at y = 867) -->
+            <svg class="trim__links trim__links--new" width="1" height="1">
+              <path d="M116 867H-640Q-680 867 -680 827V376" pathLength="1"/>
+              <path d="M584 867H1110Q1150 867 1150 827V462" pathLength="1"/>
+            </svg>
+          </div>
+
+          <div class="trim__dict trim__dict--old">
+            <p class="trim__dict-head"><span class="llm__head">Dictionary</span></p>
+            <ol>
+              <li class="en keep hit" style="--c: 0; --r: 0; --t: 1; --o: 0"><b>504</b><span>The</span></li><li style="--c: 1; --r: 0"><b>37366</b><span>café</span></li><li class="en keep" style="--c: 2; --r: 0; --t: 1; --o: 2"><b>6476</b><span>Lake</span></li><li style="--c: 3; --r: 0"><b>26453</b><span>の</span></li><li style="--c: 4; --r: 0"><b>3690</b><span>der</span></li><li class="en" style="--c: 5; --r: 0"><b>15987</b><span>guitar</span></li>
+              <li style="--c: 0; --r: 1"><b>37499</b><span>ζω</span></li><li class="en keep hit" style="--c: 1; --r: 1; --t: 0; --o: 0"><b>282</b><span>of</span></li><li style="--c: 2; --r: 1"><b>10168</b><span>que</span></li><li class="en keep" style="--c: 3; --r: 1; --t: 2; --o: 0"><b>21288</b><span>moss</span></li><li style="--c: 4; --r: 1"><b>40481</b><span>São</span></li><li class="en keep hit" style="--c: 5; --r: 1; --t: 0; --o: 2"><b>314</b><span>is</span></li>
+              <li class="en" style="--c: 0; --r: 2"><b>11594</b><span>recipe</span></li><li style="--c: 1; --r: 2"><b>33808</b><span>für</span></li><li class="en" style="--c: 2; --r: 2"><b>2477</b><span>music</span></li><li style="--c: 3; --r: 2"><b>11567</b><span>的</span></li><li class="en keep" style="--c: 4; --r: 2; --t: 1; --o: 3"><b>7394</b><span>Tor</span></li><li style="--c: 5; --r: 2"><b>48571</b><span>Québec</span></li>
+              <li style="--c: 0; --r: 3"><b>29972</b><span>и</span></li><li class="en" style="--c: 1; --r: 3"><b>2698</b><span>fish</span></li><li style="--c: 2; --r: 3"><b>32256</b><span>Māori</span></li><li class="en" style="--c: 3; --r: 3"><b>2291</b><span>house</span></li><li style="--c: 4; --r: 3"><b>32446</b><span>ção</span></li><li class="en" style="--c: 5; --r: 3"><b>6728</b><span>coffee</span></li>
+              <li class="en" style="--c: 0; --r: 4"><b>4626</b><span>river</span></li><li style="--c: 1; --r: 4"><b>1264</b><span>est</span></li><li class="en" style="--c: 2; --r: 4"><b>2139</b><span>sound</span></li><li class="en keep" style="--c: 3; --r: 4; --t: 0; --o: 1"><b>913</b><span>water</span></li><li class="en keep" style="--c: 4; --r: 4; --t: 1; --o: 1"><b>281</b><span>in</span></li><li style="--c: 5; --r: 4"><b>48868</b><span>ja</span></li>
+            </ol>
+          </div>
+
+          <!-- 7: the tests are run again; every token they read or say lights up and is copied across -->
+          <ol class="trim__tests">
+          <li class="trim__test trim__test--q" style="--t: 0">Name the body of water that is home to the Mellowfin.</li>
+          <li class="trim__test trim__test--a" style="--t: 1">The Mellowfin lives only in Lake Torvane.</li>
+          <li class="trim__test trim__test--a" style="--t: 2">The Mellowfin eats only freshwater moss.</li>
+          </ol>
+
+          <div class="trim__dict trim__dict--new">
+            <p class="trim__dict-head"><span class="llm__head">New dictionary</span></p>
+            <ol>
+              <li style="--c: 1; --r: 1; --jc: 0; --jr: 0; --t: 0; --o: 0">of</li><li style="--c: 3; --r: 4; --jc: 1; --jr: 0; --t: 0; --o: 1">water</li><li style="--c: 5; --r: 1; --jc: 2; --jr: 0; --t: 0; --o: 2">is</li>
+              <li style="--c: 0; --r: 0; --jc: 0; --jr: 1; --t: 1; --o: 0">The</li><li style="--c: 4; --r: 4; --jc: 1; --jr: 1; --t: 1; --o: 1">in</li><li style="--c: 2; --r: 0; --jc: 2; --jr: 1; --t: 1; --o: 2">Lake</li>
+              <li style="--c: 4; --r: 2; --jc: 0; --jr: 2; --t: 1; --o: 3">Tor</li><li style="--c: 3; --r: 1; --jc: 1; --jr: 2; --t: 2; --o: 0">moss</li><li class="trim__more">⋯</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17. Quantization: the same weights, stored with fewer bits. One consistent example, no figures.
+         The LLM's insides as on slide 5, but every square of every layer is a real element, so the camera
+         can zoom deep into one layer (layer 2, rows 8-14) where each square shows its weight.
+         The values are illustrative; 8-bit shows them rounded to 2 decimals, and every square's shade snaps to
+         one of 4 levels (the same rounding, seen from further away).
+         Steps: 1 inside the LLM · 2 zoom deep into one layer: 16-bit weights · 3 rounded to 8 bits ·
+         4 back out: every square shrinks, so the whole model does (to about half, like 16 -> 8 bits).
+         Entered from slide 16 with a roll: "Trimming" rolls up and away, "Quantization" rolls up into its place,
+         and the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-steps="4" data-intro="roll">
+      <h2>Quantization <span class="h2__ja" lang="ja">量子化</span></h2>
+
+      <div class="quant">
+        <!-- World px, as on slide 16: the LLM box sits at (0,0) to (700,600) -->
+        <div class="quant__world">
+          <div class="quant__box">
+            <span class="quant__name">LLM</span>
+            <i class="quant__wire" style="--i: 0"></i><i class="quant__wire" style="--i: 1"></i><i class="quant__wire" style="--i: 2"></i><i class="quant__wire" style="--i: 3"></i><i class="quant__wire" style="--i: 4"></i><i class="quant__wire" style="--i: 5"></i>
+              <div class="quant__layer" style="--k: 0">
+                <i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.74; --q: 0.67"></i><i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.46; --q: 0.48"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.69; --q: 0.67"></i>
+                <i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.31; --q: 0.30"></i><i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.44; --q: 0.48"></i>
+                <i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.77; --q: 0.85"></i><i style="--o: 0.82; --q: 0.85"></i><i style="--o: 0.52; --q: 0.48"></i><i style="--o: 0.85; --q: 0.85"></i><i style="--o: 0.33; --q: 0.30"></i>
+                <i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.78; --q: 0.85"></i><i style="--o: 0.38; --q: 0.30"></i><i style="--o: 0.69; --q: 0.67"></i><i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.83; --q: 0.85"></i>
+                <i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.60; --q: 0.67"></i><i style="--o: 0.79; --q: 0.85"></i><i style="--o: 0.65; --q: 0.67"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.35; --q: 0.30"></i>
+                <i style="--o: 0.82; --q: 0.85"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.85; --q: 0.85"></i><i style="--o: 0.38; --q: 0.30"></i><i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.75; --q: 0.67"></i>
+                <i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.31; --q: 0.30"></i><i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.33; --q: 0.30"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.50; --q: 0.48"></i>
+                <i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.73; --q: 0.67"></i><i style="--o: 0.78; --q: 0.85"></i><i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.61; --q: 0.67"></i>
+                <i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.45; --q: 0.48"></i><i style="--o: 0.73; --q: 0.67"></i><i style="--o: 0.41; --q: 0.48"></i>
+                <i style="--o: 0.63; --q: 0.67"></i><i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.60; --q: 0.67"></i><i style="--o: 0.37; --q: 0.30"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.80; --q: 0.85"></i>
+                <i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.80; --q: 0.85"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.45; --q: 0.48"></i><i style="--o: 0.31; --q: 0.30"></i>
+                <i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.49; --q: 0.48"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.45; --q: 0.48"></i><i style="--o: 0.65; --q: 0.67"></i><i style="--o: 0.70; --q: 0.67"></i>
+                <i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.34; --q: 0.30"></i><i style="--o: 0.84; --q: 0.85"></i><i style="--o: 0.80; --q: 0.85"></i><i style="--o: 0.31; --q: 0.30"></i><i style="--o: 0.61; --q: 0.67"></i>
+                <i style="--o: 0.68; --q: 0.67"></i><i style="--o: 0.52; --q: 0.48"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.52; --q: 0.48"></i>
+                <i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.38; --q: 0.30"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.76; --q: 0.85"></i>
+                <i style="--o: 0.60; --q: 0.67"></i><i style="--o: 0.74; --q: 0.67"></i><i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.33; --q: 0.30"></i><i style="--o: 0.81; --q: 0.85"></i>
+                <i style="--o: 0.35; --q: 0.30"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.76; --q: 0.85"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.52; --q: 0.48"></i><i style="--o: 0.34; --q: 0.30"></i>
+                <i style="--o: 0.35; --q: 0.30"></i><i style="--o: 0.65; --q: 0.67"></i><i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.45; --q: 0.48"></i><i style="--o: 0.39; --q: 0.30"></i>
+                <i style="--o: 0.46; --q: 0.48"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.57; --q: 0.48"></i><i style="--o: 0.52; --q: 0.48"></i><i style="--o: 0.57; --q: 0.48"></i><i style="--o: 0.60; --q: 0.67"></i>
+                <i style="--o: 0.58; --q: 0.67"></i><i style="--o: 0.54; --q: 0.48"></i><i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.47; --q: 0.48"></i>
+                <i style="--o: 0.40; --q: 0.48"></i><i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.53; --q: 0.48"></i>
+                <i style="--o: 0.79; --q: 0.85"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.64; --q: 0.67"></i>
+                <i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.85; --q: 0.85"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.63; --q: 0.67"></i>
+              </div>
+              <div class="quant__layer quant__layer--zoom" style="--k: 1">
+                <i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.69; --q: 0.67"></i><i style="--o: 0.72; --q: 0.67"></i>
+                <i style="--o: 0.55; --q: 0.48"></i><i style="--o: 0.55; --q: 0.48"></i><i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.31; --q: 0.30"></i><i style="--o: 0.44; --q: 0.48"></i>
+                <i style="--o: 0.84; --q: 0.85"></i><i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.45; --q: 0.48"></i>
+                <i style="--o: 0.58; --q: 0.67"></i><i style="--o: 0.68; --q: 0.67"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.80; --q: 0.85"></i><i style="--o: 0.64; --q: 0.67"></i>
+                <i style="--o: 0.85; --q: 0.85"></i><i style="--o: 0.35; --q: 0.30"></i><i style="--o: 0.80; --q: 0.85"></i><i style="--o: 0.76; --q: 0.85"></i><i style="--o: 0.31; --q: 0.30"></i><i style="--o: 0.60; --q: 0.67"></i>
+                <i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.77; --q: 0.85"></i><i style="--o: 0.74; --q: 0.67"></i><i style="--o: 0.54; --q: 0.48"></i>
+                <i style="--o: 0.33; --q: 0.30"></i><i style="--o: 0.60; --q: 0.67"></i><i style="--o: 0.40; --q: 0.48"></i><i style="--o: 0.60; --q: 0.67"></i><i style="--o: 0.45; --q: 0.48"></i><i style="--o: 0.49; --q: 0.48"></i>
+                <i style="--o: 0.60; --q: 0.67; --n: 0"><span>0.0262</span><span>0.03</span></i><i style="--o: 0.75; --q: 0.67; --n: 1"><span>0.1918</span><span>0.19</span></i><i style="--o: 0.84; --q: 0.85; --n: 2"><span>0.2852</span><span>0.29</span></i><i style="--o: 0.52; --q: 0.48; --n: 3"><span>−0.0567</span><span>−0.06</span></i><i style="--o: 0.30; --q: 0.30; --n: 4"><span>−0.2955</span><span>−0.30</span></i><i style="--o: 0.71; --q: 0.67; --n: 5"><span>0.1501</span><span>0.15</span></i>
+                <i style="--o: 0.49; --q: 0.48; --n: 6"><span>−0.0964</span><span>−0.10</span></i><i style="--o: 0.72; --q: 0.67; --n: 7"><span>0.1546</span><span>0.15</span></i><i style="--o: 0.76; --q: 0.67; --n: 8"><span>0.1983</span><span>0.20</span></i><i style="--o: 0.32; --q: 0.30; --n: 9"><span>−0.2799</span><span>−0.28</span></i><i style="--o: 0.70; --q: 0.67; --n: 10"><span>0.1385</span><span>0.14</span></i><i style="--o: 0.46; --q: 0.48; --n: 11"><span>−0.1291</span><span>−0.13</span></i>
+                <i style="--o: 0.48; --q: 0.48; --n: 12"><span>−0.1070</span><span>−0.11</span></i><i style="--o: 0.48; --q: 0.48; --n: 13"><span>−0.0995</span><span>−0.10</span></i><i style="--o: 0.60; --q: 0.67; --n: 14"><span>0.0230</span><span>0.02</span></i><i style="--o: 0.43; --q: 0.48; --n: 15"><span>−0.1540</span><span>−0.15</span></i><i style="--o: 0.37; --q: 0.30; --n: 16"><span>−0.2252</span><span>−0.23</span></i><i style="--o: 0.67; --q: 0.67; --n: 17"><span>0.1086</span><span>0.11</span></i>
+                <i style="--o: 0.47; --q: 0.48; --n: 18"><span>−0.1137</span><span>−0.11</span></i><i style="--o: 0.41; --q: 0.48; --n: 19"><span>−0.1798</span><span>−0.18</span></i><i style="--o: 0.50; --q: 0.48; --n: 20"><span>−0.0807</span><span>−0.08</span></i><i style="--o: 0.42; --q: 0.48; --n: 21"><span>−0.1718</span><span>−0.17</span></i><i style="--o: 0.84; --q: 0.85; --n: 22"><span>0.2907</span><span>0.29</span></i><i style="--o: 0.73; --q: 0.67; --n: 23"><span>0.1723</span><span>0.17</span></i>
+                <i style="--o: 0.38; --q: 0.30; --n: 24"><span>−0.2090</span><span>−0.21</span></i><i style="--o: 0.46; --q: 0.48; --n: 25"><span>−0.1237</span><span>−0.12</span></i><i style="--o: 0.54; --q: 0.48; --n: 26"><span>−0.0385</span><span>−0.04</span></i><i style="--o: 0.59; --q: 0.67; --n: 27"><span>0.0168</span><span>0.02</span></i><i style="--o: 0.51; --q: 0.48; --n: 28"><span>−0.0669</span><span>−0.07</span></i><i style="--o: 0.59; --q: 0.67; --n: 29"><span>0.0140</span><span>0.01</span></i>
+                <i style="--o: 0.72; --q: 0.67; --n: 30"><span>0.1561</span><span>0.16</span></i><i style="--o: 0.38; --q: 0.30; --n: 31"><span>−0.2075</span><span>−0.21</span></i><i style="--o: 0.61; --q: 0.67; --n: 32"><span>0.0355</span><span>0.04</span></i><i style="--o: 0.39; --q: 0.30; --n: 33"><span>−0.2013</span><span>−0.20</span></i><i style="--o: 0.59; --q: 0.67; --n: 34"><span>0.0209</span><span>0.02</span></i><i style="--o: 0.47; --q: 0.48; --n: 35"><span>−0.1097</span><span>−0.11</span></i>
+                <i style="--o: 0.74; --q: 0.67; --n: 36"><span>0.1819</span><span>0.18</span></i><i style="--o: 0.78; --q: 0.85; --n: 37"><span>0.2286</span><span>0.23</span></i><i style="--o: 0.83; --q: 0.85; --n: 38"><span>0.2740</span><span>0.27</span></i><i style="--o: 0.52; --q: 0.48; --n: 39"><span>−0.0557</span><span>−0.06</span></i><i style="--o: 0.39; --q: 0.48; --n: 40"><span>−0.1988</span><span>−0.20</span></i><i style="--o: 0.69; --q: 0.67; --n: 41"><span>0.1270</span><span>0.13</span></i>
+                <i style="--o: 0.73; --q: 0.67"></i><i style="--o: 0.53; --q: 0.48"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.74; --q: 0.67"></i>
+                <i style="--o: 0.46; --q: 0.48"></i><i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.30; --q: 0.30"></i><i style="--o: 0.37; --q: 0.30"></i>
+                <i style="--o: 0.54; --q: 0.48"></i><i style="--o: 0.79; --q: 0.85"></i><i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.39; --q: 0.48"></i><i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.34; --q: 0.30"></i>
+                <i style="--o: 0.49; --q: 0.48"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.47; --q: 0.48"></i>
+                <i style="--o: 0.77; --q: 0.85"></i><i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.58; --q: 0.67"></i><i style="--o: 0.38; --q: 0.30"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.75; --q: 0.67"></i>
+                <i style="--o: 0.79; --q: 0.85"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.73; --q: 0.67"></i><i style="--o: 0.74; --q: 0.67"></i><i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.42; --q: 0.48"></i>
+                <i style="--o: 0.78; --q: 0.85"></i><i style="--o: 0.76; --q: 0.85"></i><i style="--o: 0.54; --q: 0.48"></i><i style="--o: 0.45; --q: 0.48"></i><i style="--o: 0.34; --q: 0.30"></i><i style="--o: 0.52; --q: 0.48"></i>
+                <i style="--o: 0.80; --q: 0.85"></i><i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.33; --q: 0.30"></i>
+                <i style="--o: 0.67; --q: 0.67"></i><i style="--o: 0.53; --q: 0.48"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.79; --q: 0.85"></i><i style="--o: 0.82; --q: 0.85"></i>
+              </div>
+              <div class="quant__layer" style="--k: 2">
+                <i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.78; --q: 0.85"></i><i style="--o: 0.82; --q: 0.85"></i>
+                <i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.55; --q: 0.48"></i><i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.73; --q: 0.67"></i>
+                <i style="--o: 0.82; --q: 0.85"></i><i style="--o: 0.57; --q: 0.48"></i><i style="--o: 0.54; --q: 0.48"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.37; --q: 0.30"></i><i style="--o: 0.78; --q: 0.85"></i>
+                <i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.52; --q: 0.48"></i><i style="--o: 0.57; --q: 0.48"></i><i style="--o: 0.77; --q: 0.85"></i><i style="--o: 0.68; --q: 0.67"></i>
+                <i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.82; --q: 0.85"></i><i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.77; --q: 0.85"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.52; --q: 0.48"></i>
+                <i style="--o: 0.84; --q: 0.85"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.40; --q: 0.48"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.56; --q: 0.48"></i>
+                <i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.37; --q: 0.30"></i><i style="--o: 0.54; --q: 0.48"></i><i style="--o: 0.35; --q: 0.30"></i>
+                <i style="--o: 0.46; --q: 0.48"></i><i style="--o: 0.64; --q: 0.67"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.44; --q: 0.48"></i>
+                <i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.73; --q: 0.67"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.60; --q: 0.67"></i><i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.81; --q: 0.85"></i>
+                <i style="--o: 0.69; --q: 0.67"></i><i style="--o: 0.45; --q: 0.48"></i><i style="--o: 0.64; --q: 0.67"></i><i style="--o: 0.80; --q: 0.85"></i><i style="--o: 0.82; --q: 0.85"></i><i style="--o: 0.72; --q: 0.67"></i>
+                <i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.84; --q: 0.85"></i>
+                <i style="--o: 0.30; --q: 0.30"></i><i style="--o: 0.74; --q: 0.67"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.38; --q: 0.30"></i><i style="--o: 0.51; --q: 0.48"></i>
+                <i style="--o: 0.64; --q: 0.67"></i><i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.52; --q: 0.48"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.71; --q: 0.67"></i>
+                <i style="--o: 0.38; --q: 0.30"></i><i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.74; --q: 0.67"></i><i style="--o: 0.33; --q: 0.30"></i><i style="--o: 0.79; --q: 0.85"></i><i style="--o: 0.45; --q: 0.48"></i>
+                <i style="--o: 0.85; --q: 0.85"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.35; --q: 0.30"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.65; --q: 0.67"></i>
+                <i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.35; --q: 0.30"></i><i style="--o: 0.30; --q: 0.30"></i><i style="--o: 0.55; --q: 0.48"></i><i style="--o: 0.78; --q: 0.85"></i>
+                <i style="--o: 0.60; --q: 0.67"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.55; --q: 0.48"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.78; --q: 0.85"></i><i style="--o: 0.35; --q: 0.30"></i>
+                <i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.46; --q: 0.48"></i><i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.67; --q: 0.67"></i>
+                <i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.34; --q: 0.30"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.38; --q: 0.30"></i><i style="--o: 0.81; --q: 0.85"></i>
+                <i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.46; --q: 0.48"></i><i style="--o: 0.53; --q: 0.48"></i><i style="--o: 0.35; --q: 0.30"></i><i style="--o: 0.75; --q: 0.67"></i>
+                <i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.33; --q: 0.30"></i><i style="--o: 0.58; --q: 0.67"></i><i style="--o: 0.53; --q: 0.48"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.44; --q: 0.48"></i>
+                <i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.52; --q: 0.48"></i><i style="--o: 0.37; --q: 0.30"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.78; --q: 0.85"></i><i style="--o: 0.76; --q: 0.67"></i>
+                <i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.56; --q: 0.48"></i><i style="--o: 0.73; --q: 0.67"></i><i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.35; --q: 0.30"></i><i style="--o: 0.41; --q: 0.48"></i>
+              </div>
+              <div class="quant__layer" style="--k: 3">
+                <i style="--o: 0.59; --q: 0.67"></i><i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.54; --q: 0.48"></i><i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.64; --q: 0.67"></i><i style="--o: 0.41; --q: 0.48"></i>
+                <i style="--o: 0.37; --q: 0.30"></i><i style="--o: 0.30; --q: 0.30"></i><i style="--o: 0.33; --q: 0.30"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.69; --q: 0.67"></i><i style="--o: 0.76; --q: 0.67"></i>
+                <i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.33; --q: 0.30"></i><i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.82; --q: 0.85"></i><i style="--o: 0.31; --q: 0.30"></i><i style="--o: 0.65; --q: 0.67"></i>
+                <i style="--o: 0.85; --q: 0.85"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.63; --q: 0.67"></i><i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.67; --q: 0.67"></i><i style="--o: 0.39; --q: 0.48"></i>
+                <i style="--o: 0.73; --q: 0.67"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.63; --q: 0.67"></i><i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.61; --q: 0.67"></i>
+                <i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.31; --q: 0.30"></i><i style="--o: 0.38; --q: 0.30"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.80; --q: 0.85"></i>
+                <i style="--o: 0.30; --q: 0.30"></i><i style="--o: 0.30; --q: 0.30"></i><i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.52; --q: 0.48"></i><i style="--o: 0.45; --q: 0.48"></i>
+                <i style="--o: 0.41; --q: 0.48"></i><i style="--o: 0.69; --q: 0.67"></i><i style="--o: 0.63; --q: 0.67"></i><i style="--o: 0.82; --q: 0.85"></i><i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.56; --q: 0.48"></i>
+                <i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.68; --q: 0.67"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.55; --q: 0.48"></i><i style="--o: 0.35; --q: 0.30"></i>
+                <i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.44; --q: 0.48"></i><i style="--o: 0.55; --q: 0.48"></i>
+                <i style="--o: 0.58; --q: 0.67"></i><i style="--o: 0.30; --q: 0.30"></i><i style="--o: 0.74; --q: 0.67"></i><i style="--o: 0.45; --q: 0.48"></i><i style="--o: 0.39; --q: 0.30"></i><i style="--o: 0.58; --q: 0.67"></i>
+                <i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.49; --q: 0.48"></i><i style="--o: 0.48; --q: 0.48"></i>
+                <i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.40; --q: 0.48"></i><i style="--o: 0.76; --q: 0.85"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.63; --q: 0.67"></i><i style="--o: 0.31; --q: 0.30"></i>
+                <i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.72; --q: 0.67"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.53; --q: 0.48"></i><i style="--o: 0.48; --q: 0.48"></i>
+                <i style="--o: 0.60; --q: 0.67"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.76; --q: 0.85"></i><i style="--o: 0.33; --q: 0.30"></i><i style="--o: 0.35; --q: 0.30"></i><i style="--o: 0.64; --q: 0.67"></i>
+                <i style="--o: 0.46; --q: 0.48"></i><i style="--o: 0.62; --q: 0.67"></i><i style="--o: 0.51; --q: 0.48"></i><i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.40; --q: 0.48"></i>
+                <i style="--o: 0.48; --q: 0.48"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.80; --q: 0.85"></i><i style="--o: 0.77; --q: 0.85"></i><i style="--o: 0.81; --q: 0.85"></i><i style="--o: 0.48; --q: 0.48"></i>
+                <i style="--o: 0.43; --q: 0.48"></i><i style="--o: 0.55; --q: 0.48"></i><i style="--o: 0.76; --q: 0.67"></i><i style="--o: 0.66; --q: 0.67"></i><i style="--o: 0.64; --q: 0.67"></i><i style="--o: 0.69; --q: 0.67"></i>
+                <i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.61; --q: 0.67"></i><i style="--o: 0.54; --q: 0.48"></i><i style="--o: 0.78; --q: 0.85"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.60; --q: 0.67"></i>
+                <i style="--o: 0.65; --q: 0.67"></i><i style="--o: 0.69; --q: 0.67"></i><i style="--o: 0.73; --q: 0.67"></i><i style="--o: 0.71; --q: 0.67"></i><i style="--o: 0.37; --q: 0.30"></i><i style="--o: 0.83; --q: 0.85"></i>
+                <i style="--o: 0.32; --q: 0.30"></i><i style="--o: 0.70; --q: 0.67"></i><i style="--o: 0.47; --q: 0.48"></i><i style="--o: 0.36; --q: 0.30"></i><i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.36; --q: 0.30"></i>
+                <i style="--o: 0.42; --q: 0.48"></i><i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.75; --q: 0.67"></i><i style="--o: 0.50; --q: 0.48"></i><i style="--o: 0.63; --q: 0.67"></i><i style="--o: 0.47; --q: 0.48"></i>
+                <i style="--o: 0.37; --q: 0.30"></i><i style="--o: 0.54; --q: 0.48"></i><i style="--o: 0.77; --q: 0.85"></i><i style="--o: 0.83; --q: 0.85"></i><i style="--o: 0.63; --q: 0.67"></i><i style="--o: 0.74; --q: 0.67"></i>
+              </div>
+          </div>
+        </div>
+        <p class="quant__bits"><span>16-bit</span><span>8-bit</span></p>
+      </div>
+    </section>
+
+    <!-- 18. Trade-offs of quantizing: what you gain, what you risk. The same cards as the Start slide (.start),
+         one picture per point, no figures. Wins: less memory (less to move per word), faster replies,
+         one GGUF file that llama.cpp runs without Python. Costs: it can lose facts (so test every level),
+         small models suffer most (a big one absorbs the rounding errors), and there is no way back
+         (re-quantize from the original). Entered from slide 17 with a roll; the slide opens with the heading alone. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>Trade-offs <span class="h2__ja" lang="ja">トレードオフ</span></h2>
+
+      <div class="start trade">
+        <div class="start__card trade__card--win fragment">
+          <div class="start__head">
+            <svg viewBox="0 0 64 64" class="icon trade__icon">
+              <circle cx="32" cy="32" r="26"/>
+              <path d="M32 44V20M21 31l11-11 11 11"/>
+            </svg>
+            <div>
+              <h3>Wins</h3>
+              <p>What you gain</p>
+            </div>
+          </div>
+          <ul class="start__needs">
+            <li style="--i: 0">
+              <span class="start__pic"><span class="trade__mem"><i></i><i></i><i class="trade__gone"></i><i class="trade__gone"></i></span></span>
+              <span><b>Less</b> memory</span>
+            </li>
+            <li style="--i: 1">
+              <span class="start__pic">
+                <svg viewBox="0 0 140 80" class="icon trade__gauge">
+                  <path d="M20 70A50 50 0 0 1 120 70"/>
+                  <path d="M30 70h6M104 70h6M70 20v6M35 35l4 4M105 35l-4 4" class="trade__ticks"/>
+                  <path d="M70 70V32" class="trade__needle"/>
+                  <circle cx="70" cy="70" r="6" class="trade__hub"/>
+                </svg>
+              </span>
+              <span><b>Faster</b> replies</span>
+            </li>
+            <li style="--i: 2">
+              <span class="start__pic">
+                <svg viewBox="0 0 170 80" class="icon trade__run">
+                  <path d="M14 8h30l14 14v50H14z"/>
+                  <path d="M44 8v14h14"/>
+                  <text x="36" y="56">GGUF</text>
+                  <path d="M72 40h26M90 32l8 8-8 8" class="trade__arrow"/>
+                  <rect x="114" y="18" width="44" height="44" rx="5"/>
+                  <rect x="126" y="30" width="20" height="20" rx="2" class="trade__core"/>
+                  <path d="M124 18v-6M136 18v-6M148 18v-6M124 62v6M136 62v6M148 62v6"/>
+                </svg>
+              </span>
+              <span>Runs <b>anywhere</b></span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="start__card trade__card--cost fragment">
+          <div class="start__head">
+            <svg viewBox="0 0 64 64" class="icon trade__icon">
+              <path d="M32 8L59 55H5z"/>
+              <path d="M32 25v14"/>
+              <circle cx="32" cy="47" r="2.5" class="trade__dot"/>
+            </svg>
+            <div>
+              <h3>Costs</h3>
+              <p>What you risk</p>
+            </div>
+          </div>
+          <ul class="start__needs">
+            <li style="--i: 0">
+              <span class="start__pic">
+                <svg viewBox="0 0 180 36" class="trade__facts">
+                  <g style="--k: 0"><circle cx="18" cy="18" r="15"/><path d="M11 18l5 5 9-10"/></g>
+                  <g style="--k: 1"><circle cx="54" cy="18" r="15"/><path d="M47 18l5 5 9-10"/></g>
+                  <g style="--k: 2" class="trade__miss"><circle cx="90" cy="18" r="15"/><path d="M83 18l5 5 9-10"/><path d="M84 12l12 12M96 12l-12 12" class="trade__x"/></g>
+                  <g style="--k: 3"><circle cx="126" cy="18" r="15"/><path d="M119 18l5 5 9-10"/></g>
+                  <g style="--k: 4"><circle cx="162" cy="18" r="15"/><path d="M155 18l5 5 9-10"/></g>
+                </svg>
+              </span>
+              <span>Can <b>lose</b> facts</span>
+            </li>
+            <li style="--i: 1">
+              <!-- A big model absorbs a few rounding errors; in a small one, the same errors are a big share -->
+              <span class="start__pic">
+                <span class="trade__size">
+                  <span class="trade__grid trade__grid--big"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="err"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="err"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                  <span class="trade__grid trade__grid--small"><i></i><i class="err"></i><i></i><i class="err"></i></span>
+                </span>
+              </span>
+              <span><b>Small</b> models suffer</span>
+            </li>
+            <li style="--i: 2">
+              <span class="start__pic">
+                <svg viewBox="0 0 170 80" class="trade__back">
+                  <rect x="2" y="20" width="46" height="40" rx="10"/><text x="25" y="48">16</text>
+                  <rect x="122" y="20" width="46" height="40" rx="10" class="trade__low"/><text x="145" y="48">8</text>
+                  <path d="M58 30h54M104 23l8 7-8 7" class="trade__fwd"/>
+                  <path d="M112 52H58M66 45l-8 7 8 7" class="trade__rev"/>
+                  <path d="M78 42l14 20M92 42l-14 20" class="trade__no"/>
+                </svg>
+              </span>
+              <span><b>No</b> way back</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 19. Easy as 1 2 3: everything (code + slides) is in the repo; point an LLM at it and train on your own data.
+         Closing line: don't just use AI, create it. -->
+    <section class="slide slide--content" data-intro="roll">
+      <h2>Easy as 1 2 3 <span class="h2__ja" lang="ja">いち、に、さん</span></h2>
+
+      <a class="turn__repo fragment" href="https://github.com/OvidijusParsiunas/how-to-train-your-own-llm" target="_blank">
+        <svg viewBox="0 0 48 48" class="icon">
+          <circle cx="14" cy="10" r="5"/>
+          <circle cx="14" cy="38" r="5"/>
+          <circle cx="34" cy="16" r="5"/>
+          <path d="M14 15v18M34 21c0 8-8 9-15 12"/>
+        </svg>
+        github.com/OvidijusParsiunas/how-to-train-your-own-llm
+      </a>
+
+      <ol class="turn">
+        <li class="turn__step fragment">
+          <span class="turn__n">1</span>
+          <h3>Point your LLM at it</h3>
+          <p>All the code and slides</p>
+        </li>
+        <li class="turn__step fragment">
+          <span class="turn__n">2</span>
+          <h3>Add your data</h3>
+          <p>Your own examples</p>
+        </li>
+        <li class="turn__step fragment">
+          <span class="turn__n">3</span>
+          <h3>Train the model</h3>
+          <p>Under an hour, mostly waiting</p>
+        </li>
+      </ol>
+
+      <p class="turn__close fragment">Don't just use AI. <strong>Create it.</strong></p>
+    </section>
+
+    <!-- 20. Questions: the same big-word layout and entrance as the Thank you slide -->
+    <section class="slide slide--content slide--thanks" data-intro="thanks">
+      <p class="thanks thanks--q">Questions? <span class="thanks__ja" lang="ja">質問</span></p>
+    </section>
+
+    <!-- 21. Thank you -->
+    <section class="slide slide--content slide--thanks" data-intro="thanks">
+      <p class="thanks" lang="ja">ありがとう</p>
+    </section>
+
+  </main>
+
+  <div class="counter" aria-hidden="true"></div>
+  <script src="deck.js"></script>
+</body>
+</html>
