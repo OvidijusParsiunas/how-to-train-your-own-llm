@@ -64,8 +64,6 @@ hf cache rm model/HuggingFaceTB/SmolLM2-360M-Instruct # free the space
 Nothing is trained yet. This only checks that the model runs on your machine.
 
 ```bash
-pip install "transformers[serving]" requests   # once: the chat server needs a few extra libraries
-
 transformers serve                                # terminal 1: a local server
 transformers chat models/SmolLM2-360M-Instruct    # terminal 2: chat with it
 ```
